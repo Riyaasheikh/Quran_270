@@ -45,6 +45,7 @@ const SignUp = () => {
       navigate('/');
     } catch (err) {
       console.log('Full error:', err.response?.data);
+      console.log("Validation Errors:", err.response.data.errors);
       const errors = err.response?.data?.errors;
       if (errors) {
         const flat = {};
@@ -166,8 +167,6 @@ const SignUp = () => {
           <span className="text-xs text-gray-400">or</span>
           <div className="flex-1 h-px bg-gray-200" />
         </div>
-
-        {/* Google Button */}
         <button
           onClick={() => window.location.href = 'http://localhost:8000/auth/google/redirect'}
           className="w-full py-4 border border-gray-300 rounded-xl flex items-center justify-center gap-3 font-semibold text-gray-700 hover:bg-gray-50 transition-colors"

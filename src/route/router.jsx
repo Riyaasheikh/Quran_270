@@ -9,6 +9,7 @@ import SearchResults from "../pages/SearchResults";
 import Bookmarks from "../pages/Bookmarks";
 import SurahDetail from "../pages/SurahDetails";
 import AboutUs from "../pages/AboutUs";
+import Profile from "../pages/Profile";
 
 export const router = createBrowserRouter([
   {
@@ -47,6 +48,11 @@ export const router = createBrowserRouter([
   {
     path:'/login',
     element:<Login/>
+
+  },
+  {
+    path:'/profile',
+    element:<Profile/>
 
   },
   {

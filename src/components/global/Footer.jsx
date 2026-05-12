@@ -26,8 +26,6 @@ const Footer = () => {
 
   const navLinks = [
     { name: 'Home', path: '/' },
-    { name: 'Quran Radio', path: '/radio' },
-    { name: 'Reciters', path: '/reciters' },
     { name: 'About Us', path: '/about' },
     { name: 'Bookmarks', path: '/bookmarks' },
   ];
@@ -56,8 +54,6 @@ const Footer = () => {
               </p>
             </div>
           </div>
-
-
           <div className="lg:col-span-2 space-y-6">
             <h4 className="text-sm font-black uppercase tracking-widest text-[#C0E2CA]">Navigate</h4>
             <ul className="space-y-3">
@@ -98,11 +94,9 @@ const Footer = () => {
             </div>
           </div>
           </div>
-        
-
+    
         <div className="max-w-[1400px] mx-auto pt-8 border-t border-gray-100 flex flex-col md:flex-row justify-between items-center gap-8 px-4">
           <div className="flex flex-wrap justify-center gap-4">
-            {/* Theme Toggle */}
             <button 
               onClick={() => setTheme(theme === 'Light' ? 'Dark' : 'Light')} 
               className="flex items-center gap-3 px-4 py-2 border border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition-all min-w-[120px]"

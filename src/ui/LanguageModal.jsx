@@ -6,34 +6,18 @@ const LanguageModal = ({ isOpen, onClose, currentLang, onSelectLang }) => {
 
   const languages = [
     { name: "English", native: "English" },
-    { name: "Arabic", native: "العربية" },
-    { name: "Bengali", native: "বাংলা" },
-    { name: "Persian", native: "فارسی" },
-    { name: "French", native: "Français" },
-    { name: "Indonesian", native: "Indonesia" },
-    { name: "Italian", native: "Italiano" },
-    { name: "Dutch", native: "Dutch" },
-    { name: "Portuguese", native: "Português" },
-    { name: "Russian", native: "русский" },
-    { name: "Albanian", native: "Shqip" },
-    { name: "Thai", native: "ภาษาไทย" },
-    { name: "Turkish", native: "Türkçe" },
-    { name: "Urdu", native: "اردو" },
-    { name: "Chinese", native: "简体中文" },
+   
   ];
 
   return (
     <>
-      {/* Background Overlay - Click to close */}
       <div 
         className="fixed inset-0 z-[110] bg-black/40 backdrop-blur-sm transition-opacity"
         onClick={onClose}
       />
 
-      {/* Side Drawer Container */}
       <div className="fixed top-0 right-0 h-full w-full max-w-[320px] z-[120] bg-white flex flex-col shadow-2xl transition-transform transform translate-x-0">
-        
-        {/* Header */}
+
         <div className="flex justify-between items-center p-6 border-b border-gray-100 sticky top-0 bg-white">
           <h2 className="text-xl font-bold text-gray-800">Select Language</h2>
           <button 
@@ -44,7 +28,6 @@ const LanguageModal = ({ isOpen, onClose, currentLang, onSelectLang }) => {
           </button>
         </div>
 
-        {/* Language List */}
         <div className="flex-grow overflow-y-auto p-4 space-y-1">
           {languages.map((lang) => {
             const isActive = currentLang === lang.native;

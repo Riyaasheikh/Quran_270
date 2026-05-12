@@ -61,7 +61,6 @@ const SearchBar = ({ allChapters = [] }) => {
     recognition.onresult = (event) => {
       const transcript =
         event.results[0][0].transcript;
-
       setQuery(transcript);
       setShowSuggestions(true);
     };
@@ -107,7 +106,7 @@ const SearchBar = ({ allChapters = [] }) => {
       try {
         const q = query.toLowerCase().trim();
         const verseMatch =
-          q.match(/^(\d+)[:\s](\d+)$/);
+          q.match(/^(\d+)[:\s](\d+)$/); //12:34
 
         let jumpResult = null;
 
@@ -173,7 +172,7 @@ const SearchBar = ({ allChapters = [] }) => {
 
   return (
     <div
-      className="relative w-full z-[120]"
+      className="relative w-full z-[9999]"
       ref={searchRef}
     >
 
@@ -250,7 +249,7 @@ const SearchBar = ({ allChapters = [] }) => {
           results.juz.length > 0 ||
           results.ayahs.length > 0
         ) && (
-          <div className="absolute top-full left-0 right-0 mt-3 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden max-h-[550px] overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="absolute top-full  left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden max-h-[550px] overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-300">
 
             {results.jump && (
               <div className="border-b border-gray-100 bg-teal-50/30">

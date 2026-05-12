@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { RiCloseLine, RiSearchLine } from '@remixicon/react';
 import { useNavigate } from 'react-router-dom';
 
 const NavigationDrawer = ({ isOpen, onClose, allChapters }) => {
   const navigate = useNavigate();
-  const [search, setSearch] = React.useState("");
+  const [search, setSearch] = useState("");
 
   const filtered = allChapters.filter(c => c.name_simple.toLowerCase().includes(search.toLowerCase()));
 
