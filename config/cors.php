@@ -2,11 +2,11 @@
 
 return [
 
-    'paths' => ['api/*','images/*', 'sanctum/csrf-cookie'],
+    'paths' => ['api/*','images/*','auth/google/*', 'sanctum/csrf-cookie'],
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['http://localhost:5173'],  // ← specific origin, NOT '*'
+    'allowed_origins' => ['http://localhost:5173'],  
 
     'allowed_origins_patterns' => [],
 
