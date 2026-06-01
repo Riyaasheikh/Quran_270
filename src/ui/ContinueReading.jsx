@@ -15,7 +15,6 @@ const ContinueReading = () => {
 
     api.get('/api/last-read')
       .then(res => {
-        // FIX: Check if the data has actual properties (like surah_id)
         if (res.data && res.data.surah_id) {
           setLastRead(res.data);
         } else {
@@ -29,7 +28,6 @@ const ContinueReading = () => {
   return (
     <SectionWrapper>
       <div className="max-w-[1400px] mx-auto px-4 py-8">
-        
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-[#1f2124]">Continue Reading</h2>
           <Link
@@ -54,7 +52,6 @@ const ContinueReading = () => {
             </Link>
           </div>
         ) : !lastRead ? (
-          /* THIS BLOCK NOW WORKS CORRECTLY FOR NEW USERS */
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-10 text-center flex flex-col items-center">
             <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
                <RiHistoryLine size={32} className="text-gray-300" />
@@ -68,7 +65,6 @@ const ContinueReading = () => {
             </Link>
           </div>
         ) : (
-          /* UPDATED LINK FORMAT: Matches your /surah/:id/:verse pattern */
           <Link to={`/surah/${lastRead.surah_id}/${lastRead.verse_number}`}>
             <div className="group bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-xl hover:border-[#C0E2CA] transition-all cursor-pointer overflow-hidden">
               <div className="h-1.5 bg-[#C0E2CA] w-0 group-hover:w-full transition-all duration-500" />

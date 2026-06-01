@@ -12,7 +12,6 @@ const AboutUs = () => {
 
   useEffect(() => {
     const ctx = gsap.context(() => {
-      // Title Animation
       gsap.from(".about-title", {
         y: 50,
         opacity: 0,
@@ -24,7 +23,6 @@ const AboutUs = () => {
         }
       });
 
-      // Staggered Cards Animation
       gsap.from(".info-card", {
         y: 60,
         opacity: 0,
@@ -63,8 +61,6 @@ const AboutUs = () => {
     <SectionWrapper>
       <section ref={sectionRef} className="py-24 bg-white overflow-hidden">
         <div className="max-w-6xl mx-auto px-6">
-          
-          {/* Header Section */}
           <div className="text-center mb-20">
             <h2 className="about-title text-[10px] font-black uppercase tracking-[0.4em] text-[#2ca4ab] mb-4">
               Behind the Platform
@@ -77,7 +73,6 @@ const AboutUs = () => {
             </h1>
           </div>
 
-          {/* Main Content Split */}
           <div className="grid lg:grid-cols-2 gap-16 items-center mb-24">
             <div className="info-card relative">
               <RiDoubleQuotesL size={80} className="absolute -top-10 -left-6 text-teal-50 opacity-50 -z-10" />
@@ -100,7 +95,6 @@ const AboutUs = () => {
             </div>
           </div>
 
-          {/* Values Grid */}
           <div className="info-grid grid md:grid-cols-3 gap-8">
             {values.map((item, index) => (
               <div key={index} className="info-card p-10 rounded-3xl bg-gray-50 hover:bg-white hover:shadow-2xl hover:shadow-teal-900/5 transition-all duration-500 border border-transparent hover:border-teal-100 group">

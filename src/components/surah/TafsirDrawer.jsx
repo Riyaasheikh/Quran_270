@@ -9,14 +9,12 @@ const TafsirDrawer = ({ verse, onClose }) => {
   const [selectedId, setSelectedId]   = useState(169); // Ibn Kathir default
   const [showPicker, setShowPicker]   = useState(false);
 
-  // Load available tafsirs once
   useEffect(() => {
     fetchAvailableTafsirs()
       .then(setTafsirList)
       .catch(() => {});
   }, []);
 
-  // Load tafsir whenever verse or selectedId changes
   useEffect(() => {
     if (!verse) return;
     setLoading(true);
@@ -34,16 +32,11 @@ const TafsirDrawer = ({ verse, onClose }) => {
 
   return (
     <>
-      {/* Backdrop */}
       <div
         className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[150]"
         onClick={onClose}
       />
-
-      {/* Drawer */}
       <div className="fixed right-0 top-0 h-full w-full max-w-[520px] bg-white z-[160] shadow-2xl flex flex-col">
-
-        {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <div>
             <h2 className="text-lg font-bold text-gray-900">Tafsir</h2>
@@ -56,8 +49,6 @@ const TafsirDrawer = ({ verse, onClose }) => {
             <RiCloseLine size={22} className="text-gray-500" />
           </button>
         </div>
-
-        {/* Tafsir Picker */}
         <div className="px-6 py-3 border-b border-gray-100">
           <button
             onClick={() => setShowPicker(!showPicker)}
@@ -84,8 +75,6 @@ const TafsirDrawer = ({ verse, onClose }) => {
             </div>
           )}
         </div>
-
-        {/* Arabic Verse */}
         <div className="px-6 py-4 bg-[#f9fafb] border-b border-gray-100">
           <p className="text-2xl leading-loose text-right font-serif text-gray-900 rtl">
             {verse.text_uthmani}
@@ -94,8 +83,6 @@ const TafsirDrawer = ({ verse, onClose }) => {
             {verse.translations?.[0]?.text?.replace(/<[^>]*>/g, '')}
           </p>
         </div>
-
-        {/* Tafsir Content */}
         <div className="flex-1 overflow-y-auto px-6 py-5">
           {loading ? (
             <div className="flex items-center justify-center h-40">
@@ -115,7 +102,6 @@ const TafsirDrawer = ({ verse, onClose }) => {
           )}
         </div>
 
-        {/* Footer */}
         {tafsir && selectedTafsir && (
           <div className="px-6 py-3 border-t border-gray-100 bg-gray-50">
             <p className="text-xs text-gray-400 text-center">

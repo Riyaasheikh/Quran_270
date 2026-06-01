@@ -11,6 +11,7 @@ import RandomVerse from '../components/rand/RandomVerse'
 const HomePage = () => {
   return (
     <>
+    <div className="min-h-screen w-full overflow-x-hidden">
     <Navbar/>
     <SearchSection/>
     <RandomVerse/>
@@ -18,6 +19,7 @@ const HomePage = () => {
     <QuranViewer/>
     <QuranTab/>
     <Footer/>
+    </div>
     </>
     )
 }

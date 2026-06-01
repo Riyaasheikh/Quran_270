@@ -9,7 +9,6 @@ import {
 import { AuthContext } from '../context/AuthContext';
 import api from '../lib/axios';
 
-// UI Components
 import Navbar from '../components/global/Navbar';
 import Footer from '../components/global/Footer';
 import SurahIntro from '../components/surah/SurahIntro';

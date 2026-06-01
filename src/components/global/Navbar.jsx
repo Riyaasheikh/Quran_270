@@ -93,7 +93,7 @@ const Navbar = () => {
         <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-4 sm:px-6">
           <Link to="/" className=" hover:opacity-80 transition-opacity">
             <span className="text-xl md:text-2xl font-black text-[#C0E2CA] tracking-tighter drop-shadow-sm">
-              QURAN APP
+               Deen 360
             </span>
           </Link>
 

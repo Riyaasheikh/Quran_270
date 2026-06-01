@@ -12,10 +12,7 @@ const NavigationDrawer = ({ isOpen, onClose, allChapters }) => {
 
   return (
     <div className="fixed inset-0 z-[200] flex justify-start animate-in fade-in duration-300">
-      {/* Backdrop */}
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      
-      {/* Drawer Content */}
       <div className="relative w-full max-w-[320px] bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-left duration-500">
         <div className="p-6 border-b flex items-center justify-between bg-[#2ca4ab] text-white">
           <h2 className="text-xl font-bold">Navigate Quran</h2>

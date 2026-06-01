@@ -29,10 +29,8 @@ const AudioPlayer = ({
     let src;
 
     if (audioUrl) {
-      // Full chapter mode — single URL from API
       src = audioUrl;
     } else if (playlist?.[currentIndex]) {
-      // Ayah-by-ayah mode — construct from verse_key
       const verseKey = playlist[currentIndex].verse_key;
       const [surah, ayah] = verseKey.split(':');
       src = `https://everyayah.com/data/Alafasy_128kbps/${surah.padStart(3,'0')}${ayah.padStart(3,'0')}.mp3`;
@@ -166,8 +164,6 @@ const AudioPlayer = ({
             <span>{audioUrl ? 'Full Chapter' : isSingleVerseMode ? 'Single Verse' : 'Continuous'}</span>
           </div>
         </div>
-
-        {/* Right — mobile reciter + close */}
         <div className="flex items-center gap-3 w-auto md:w-1/4 justify-end">
           <button
             onClick={onChangeReciter}

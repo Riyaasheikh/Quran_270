@@ -25,7 +25,6 @@ const HadithDrawer = ({ verse, onClose }) => {
           </button>
         </div>
 
-        {/* Arabic Verse */}
         <div className="px-6 py-4 bg-[#f9fafb] border-b border-gray-100">
           <p className="text-2xl leading-loose text-right font-serif text-gray-900 rtl">
             {verse.text_uthmani}
@@ -35,7 +34,6 @@ const HadithDrawer = ({ verse, onClose }) => {
           </p>
         </div>
 
-        {/* Content */}
         <div className="flex-1 flex flex-col items-center justify-center px-6 py-10 text-center gap-5">
           <RiBookOpenLine size={48} className="text-[#2ca4ab] opacity-40" />
 

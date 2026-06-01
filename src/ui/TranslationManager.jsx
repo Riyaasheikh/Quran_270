@@ -14,7 +14,6 @@ const TranslationManager = ({ isOpen, onClose, selectedId, onSelect }) => {
 
   if (!isOpen) return null;
 
-  // Group translations by language as seen in image_e46f9c.png
   const grouped = translations.reduce((acc, item) => {
     if (!acc[item.language_name]) acc[item.language_name] = [];
     acc[item.language_name].push(item);
@@ -29,7 +28,6 @@ const TranslationManager = ({ isOpen, onClose, selectedId, onSelect }) => {
   return (
     <div className="fixed inset-0 z-[150] flex justify-end bg-black/20 backdrop-blur-sm">
       <div className="w-full max-w-md bg-white h-full shadow-2xl flex flex-col animate-slide-left">
-        {/* Header */}
         <div className="p-4 border-b flex items-center justify-between">
           <div className="flex items-center gap-4">
             <RiArrowLeftLine className="cursor-pointer" onClick={onClose} />
@@ -38,7 +36,6 @@ const TranslationManager = ({ isOpen, onClose, selectedId, onSelect }) => {
           <RiCloseLine className="cursor-pointer" size={24} onClick={onClose} />
         </div>
 
-        {/* Search */}
         <div className="p-4">
           <div className="relative">
             <RiSearchLine className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
@@ -52,7 +49,6 @@ const TranslationManager = ({ isOpen, onClose, selectedId, onSelect }) => {
           </div>
         </div>
 
-        {/* List */}
         <div className="flex-1 overflow-y-auto px-4 pb-10">
           {filteredGroups.map(lang => (
             <div key={lang} className="mb-6">

@@ -39,7 +39,7 @@ const MenuSidebar = ({ isOpen, onClose, user, onLogout }) => {
       }`}>
         <div className="flex justify-between items-center p-5 border-b">
           <span className="text-2xl font-black text-[#8c7355] tracking-tighter uppercase">
-            QURAN APP
+            Deen 360
           </span>
           <div className="flex items-center gap-4">
             {user ? (
