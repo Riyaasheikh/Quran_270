@@ -21,7 +21,6 @@ public function lastRead()
     return response()->json($last);
 }
 
-    // Save reading position
     public function save(Request $request)
     {
         $request->validate([
@@ -35,7 +34,6 @@ public function lastRead()
         /** @var \App\Models\User $user */
         $user = Auth::user();
 
-        // Update or create — one record per surah per user
         $user->readingSessions()->updateOrCreate(
             ['surah_id' => $request->surah_id],
             [

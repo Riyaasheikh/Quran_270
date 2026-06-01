@@ -13,7 +13,7 @@ return new class extends Migration
     $table->foreignId('user_id')->constrained();
     $table->integer('surah_id');
     $table->integer('verse_number');
-    $table->string('verse_key'); // e.g., "2:255"
+    $table->string('verse_key'); 
     $table->integer('translation_id')->default(85);
     $table->timestamps();
 });
