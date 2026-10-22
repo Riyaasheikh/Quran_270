@@ -1,115 +1,364 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { RiArrowUpSLine, RiArrowDownSLine, RiBookOpenLine } from '@remixicon/react';
+import {
+  RiArrowUpSLine,
+  RiArrowDownSLine,
+  RiExpandDiagonalLine,
+  RiBookOpenLine,
+  RiLoader4Line,
+  RiErrorWarningLine,
+} from '@remixicon/react';
 import { fetchChapters } from '../../api/quranApi';
 
-const Juz = () => {
+const SurahSection = () => {
   const [chapters, setChapters] = useState([]);
   const [sortOrder, setSortOrder] = useState('ASCENDING');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
   const navigate = useNavigate();
 
   useEffect(() => {
+    let mounted = true;
+
     const getChapters = async () => {
       try {
+        setLoading(true);
+        setError(false);
+
         const data = await fetchChapters();
-        setChapters(data);
-      } catch (error) {
-        console.error("Failed to fetch chapters:", error);
+
+        if (mounted) {
+          setChapters(Array.isArray(data) ? data : []);
+        }
+      } catch (err) {
+        console.error('Error fetching Surahs:', err);
+
+        if (mounted) {
+          setError(true);
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
+
     getChapters();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
-  // Professional mapping for quick reference in the UI
-  const juzMapping = useMemo(() => ({
-    1: "Al-Fatiha - Al-Baqarah", 2: "Al-Baqarah", 3: "Al-Baqarah - Al-Imran", 4: "Al-Imran - An-Nisa",
-    5: "An-Nisa", 6: "An-Nisa - Al-Ma'idah", 7: "Al-Ma'idah - Al-An'am", 8: "Al-An'am - Al-A'raf",
-    9: "Al-A'raf - Al-Anfal", 10: "Al-Anfal - At-Tawbah", 11: "At-Tawbah - Hud", 12: "Hud - Yusuf",
-    13: "Yusuf - Ibrahim", 14: "Al-Hijr - An-Nahl", 15: "Al-Isra - Al-Kahf", 16: "Al-Kahf - Ta-Ha",
-    17: "Al-Anbiya - Al-Hajj", 18: "Al-Mu'minun - Al-Furqan", 19: "Al-Furqan - An-Naml", 20: "An-Naml - Al-Ankabut",
-    21: "Al-Ankabut - Al-Ahzab", 22: "Al-Ahzab - Ya-Sin", 23: "Ya-Sin - Az-Zumar", 24: "Az-Zumar - Fussilat",
-    25: "Ash-Shura - Al-Jathiyah", 26: "Al-Ahqaf - Adh-Dhariyat", 27: "Adh-Dhariyat - Al-Hadid",
-    28: "Al-Mujadila - At-Tahrim", 29: "Al-Mulk - Al-Mursalat", 30: "An-Naba - An-Nas"
-  }), []);
+  const sortedChapters = useMemo(() => {
+    return [...chapters].sort((a, b) =>
+      sortOrder === 'ASCENDING'
+        ? a.id - b.id
+        : b.id - a.id
+    );
+  }, [chapters, sortOrder]);
 
-  const juzArray = useMemo(() => {
-    const base = Array.from({ length: 30 }, (_, i) => ({ id: i + 1 }));
-    return sortOrder === 'ASCENDING' ? base : [...base].reverse();
-  }, [sortOrder]);
+  const toggleSort = () => {
+    setSortOrder((prev) =>
+      prev === 'ASCENDING' ? 'DESCENDING' : 'ASCENDING'
+    );
+  };
 
   return (
-    <div className="max-w-[1400px] mx-auto px-4 py-16 bg-[#C0E2CA] min-h-screen font-sans">
-      
-      {/* Poster Header */}
-      <div className="text-center mb-16">
-        <h1 className="text-4xl md:text-5xl font-black text-[#8c7355] tracking-tighter uppercase mb-2">
-          Juzz of the Quran
-        </h1>
-        
+    <section className="theme-page min-h-screen">
+      <div className="mx-auto w-full max-w-[1400px] px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
 
-        <div className="flex justify-center items-center gap-4 mt-8">
-          <div className="h-[1px] w-12 bg-[#e8e1d5]"></div>
-          <button 
-            onClick={() => setSortOrder(prev => prev === 'ASCENDING' ? 'DESCENDING' : 'ASCENDING')}
-            className="flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#e8e1d5] bg-white text-[10px] font-black text-[#8c7355] hover:bg-gray-50 transition-all tracking-widest uppercase"
-          >
-            {sortOrder} {sortOrder === 'ASCENDING' ? <RiArrowUpSLine size={14}/> : <RiArrowDownSLine size={14}/>}
-          </button>
-          <div className="h-[1px] w-12 bg-[#e8e1d5]"></div>
-        </div>
-      </div>
+        {/* =========================
+            HEADER
+        ========================== */}
+        <header className="mb-12 text-center lg:mb-16">
 
-      {/* Grid for Juz 1-29 */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6 mb-12">
-        {juzArray.filter(j => j.id !== 30).map((juz) => (
-          <div 
-            key={juz.id} 
-            onClick={() => navigate(`/juz/${juz.id}`)}
-            className="group relative flex flex-col items-center p-6 bg-white border-[1.5px] border-[#e8e1d5] rounded-xl shadow-[0_4px_0_0_#e8e1d5] hover:shadow-[0_8px_0_0_#8c7355] hover:border-[#8c7355] hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden"
-          >
-            {/* Decorative Corner (Optional SVG or just styling) */}
-            <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-[#bfa07d]/20 rounded-tl-xl group-hover:border-[#8c7355]"></div>
+          <div className="mx-auto mb-5 flex items-center justify-center gap-3">
+            <span className="h-px w-8 bg-accent opacity-50 sm:w-12" />
 
-            <span className="text-3xl font-black text-[#1f2124] mb-1 group-hover:text-[#8c7355] transition-colors">
-              {juz.id}
+            <span className="theme-muted text-[9px] font-bold uppercase tracking-[0.28em]">
+              114 Chapters
             </span>
-            
-            <div className="w-6 h-[1.5px] bg-[#e8e1d5] mb-3 group-hover:w-12 group-hover:bg-[#8c7355] transition-all duration-500"></div>
 
-            <h3 className="text-[11px] font-black text-[#8c7355] uppercase tracking-tighter text-center">
-              Juz {juz.id}
-            </h3>
-            
-            <p className="text-[9px] text-[#bfa07d] font-bold tracking-tight uppercase text-center mt-1 group-hover:text-gray-900">
-              {juzMapping[juz.id]}
-            </p>
+            <span className="h-px w-8 bg-accent opacity-50 sm:w-12" />
           </div>
-        ))}
-      </div>
 
-      {/* Special Hero Card for Juz 30 (Bottom Center) */}
-      <div className="flex justify-center mt-12 animate-in fade-in slide-in-from-bottom-8 duration-1000">
-        <div 
-          onClick={() => navigate(`/juz/30`)}
-          className="w-full max-w-sm p-8 bg-white border-2 border-[#8c7355] rounded-2xl shadow-[0_15px_40px_rgba(140,115,85,0.15)] text-center cursor-pointer group hover:scale-105 transition-all"
-        >
-          <span className="text-5xl font-black text-[#1f2124] group-hover:text-[#8c7355]">30</span>
-          <h2 className="text-xl font-black uppercase tracking-widest text-[#8c7355] mt-2 mb-4">Juz 'Amma</h2>
-          <div className="h-[1px] w-full bg-[#e8e1d5] mb-4"></div>
-          <p className="text-[10px] font-bold text-gray-400 uppercase leading-relaxed tracking-wider">
-            Surahs 78 to 114 <br />
-            Includes An-Naba, An-Nazi'at, and Al-Mu'awwidhatayn
+          <h1 className="theme-text text-3xl font-black tracking-[-0.04em] sm:text-4xl md:text-5xl lg:text-6xl">
+            Surahs of the Quran
+          </h1>
+
+          <p className="theme-muted mx-auto mt-3 max-w-xl text-xs leading-relaxed sm:text-sm">
+            Explore all 114 chapters of the Holy Quran.
           </p>
-          <div className="mt-6 flex items-center justify-center gap-2 text-[#8c7355] font-black text-xs uppercase tracking-tighter">
-             <RiBookOpenLine size={16} /> Read Full Juz
-          </div>
-        </div>
-      </div>
 
-      {/* Decorative Footer */}
-      
-    </div>
+          {/* Sort control */}
+          <div className="mt-8 flex items-center justify-center gap-3">
+            <div className="h-px w-8 bg-border-theme sm:w-16" />
+
+            <button
+              type="button"
+              onClick={toggleSort}
+              aria-label={`Sort ${sortOrder === 'ASCENDING' ? 'descending' : 'ascending'}`}
+              className="
+                theme-button-outline
+                group
+                inline-flex
+                items-center
+                gap-2
+                rounded-full
+                px-4
+                py-2
+                text-[9px]
+                font-black
+                uppercase
+                tracking-[0.16em]
+                transition-all
+                duration-300
+                hover:-translate-y-0.5
+              "
+            >
+              <span>
+                {sortOrder === 'ASCENDING' ? 'Ascending' : 'Descending'}
+              </span>
+
+              {sortOrder === 'ASCENDING' ? (
+                <RiArrowUpSLine
+                  size={15}
+                  className="transition-transform group-hover:-translate-y-0.5"
+                />
+              ) : (
+                <RiArrowDownSLine
+                  size={15}
+                  className="transition-transform group-hover:translate-y-0.5"
+                />
+              )}
+            </button>
+
+            <div className="h-px w-8 bg-border-theme sm:w-16" />
+          </div>
+        </header>
+
+        {/* =========================
+            LOADING
+        ========================== */}
+        {loading && (
+          <div className="flex min-h-[300px] items-center justify-center">
+            <div className="theme-card flex items-center gap-3 rounded-2xl border px-6 py-4 shadow-sm">
+              <RiLoader4Line
+                size={20}
+                className="text-accent animate-spin"
+              />
+
+              <span className="theme-muted text-xs font-semibold">
+                Loading Surahs...
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* =========================
+            ERROR
+        ========================== */}
+        {!loading && error && (
+          <div className="flex min-h-[300px] items-center justify-center">
+            <div className="theme-card max-w-md rounded-2xl border p-8 text-center shadow-sm">
+              <div className="bg-accent-soft mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full">
+                <RiErrorWarningLine
+                  size={22}
+                  className="text-accent"
+                />
+              </div>
+
+              <h2 className="theme-text text-lg font-bold">
+                Unable to load Surahs
+              </h2>
+
+              <p className="theme-muted mt-2 text-sm leading-relaxed">
+                Please check your connection and try again.
+              </p>
+
+              <button
+                type="button"
+                onClick={() => window.location.reload()}
+                className="theme-button mt-5 rounded-full px-5 py-2.5 text-xs font-bold"
+              >
+                Try Again
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* =========================
+            EMPTY STATE
+        ========================== */}
+        {!loading && !error && sortedChapters.length === 0 && (
+          <div className="flex min-h-[300px] items-center justify-center">
+            <div className="theme-card rounded-2xl border p-8 text-center">
+              <RiBookOpenLine
+                size={30}
+                className="text-accent mx-auto mb-3"
+              />
+
+              <h2 className="theme-text font-bold">
+                No Surahs found
+              </h2>
+
+              <p className="theme-muted mt-1 text-sm">
+                There are no chapters available right now.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* =========================
+            SURAH GRID
+        ========================== */}
+        {!loading && !error && sortedChapters.length > 0 && (
+          <div
+            className="
+              grid
+              grid-cols-2
+              gap-3
+              sm:grid-cols-3
+              sm:gap-4
+              md:grid-cols-4
+              lg:grid-cols-5
+              xl:grid-cols-6
+              2xl:gap-5
+            "
+          >
+            {sortedChapters.map((surah) => (
+              <button
+                key={surah.id}
+                type="button"
+                onClick={() => navigate(`/${surah.id}`)}
+                className="
+                  theme-card
+                  group
+                  relative
+                  flex
+                  min-h-[190px]
+                  flex-col
+                  items-center
+                  justify-center
+                  overflow-hidden
+                  rounded-2xl
+                  border
+                  p-5
+                  text-center
+                  shadow-sm
+                  transition-all
+                  duration-300
+                  hover:-translate-y-1
+                  hover:shadow-xl
+                  focus:outline-none
+                  focus:ring-2
+                  focus:ring-accent
+                  focus:ring-offset-2
+                "
+              >
+                {/* Top accent */}
+                <div
+                  className="
+                    absolute
+                    left-1/2
+                    top-0
+                    h-1
+                    w-0
+                    -translate-x-1/2
+                    rounded-b-full
+                    bg-accent
+                    transition-all
+                    duration-500
+                    group-hover:w-16
+                  "
+                />
+
+                {/* Surah number */}
+                <span className="theme-gold mb-3 text-[10px] font-black tracking-[0.2em]">
+                  {String(surah.id).padStart(3, '0')}
+                </span>
+
+                {/* Arabic name */}
+                <div
+                  dir="rtl"
+                  lang="ar"
+                  className="
+                    font-quran
+                    theme-text
+                    flex
+                    min-h-[58px]
+                    items-center
+                    justify-center
+                    text-2xl
+                    leading-relaxed
+                    transition-colors
+                    duration-300
+                    group-hover:text-accent
+                    sm:text-3xl
+                  "
+                >
+                  {surah.name_arabic}
+                </div>
+
+                {/* Divider */}
+                <div
+                  className="
+                    mt-3
+                    mb-3
+                    h-px
+                    w-7
+                    bg-accent
+                    opacity-60
+                    transition-all
+                    duration-500
+                    group-hover:w-12
+                    group-hover:opacity-100
+                  "
+                />
+
+                {/* English name */}
+                <h2 className="theme-text w-full truncate text-xs font-black uppercase tracking-wide">
+                  {surah.name_simple}
+                </h2>
+
+                {/* Translation */}
+                <p className="theme-muted mt-1 w-full truncate text-[9px] font-semibold uppercase tracking-wide">
+                  {surah.translated_name?.name || ''}
+                </p>
+
+                {/* Hover arrow */}
+                <div
+                  className="
+                    absolute
+                    bottom-3
+                    right-3
+                    flex
+                    h-6
+                    w-6
+                    translate-x-1
+                    items-center
+                    justify-center
+                    rounded-full
+                    bg-accent-soft
+                    text-accent
+                    opacity-0
+                    transition-all
+                    duration-300
+                    group-hover:translate-x-0
+                    group-hover:opacity-100
+                  "
+                >
+                  <RiExpandDiagonalLine size={12} />
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </section>
   );
 };
 
-export default Juz;
+export default SurahSection;

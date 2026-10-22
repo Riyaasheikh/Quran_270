@@ -18,63 +18,83 @@ const SurahDropDown = ({ currentSurah, allChapters }) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const filteredSurahs = allChapters
-    .sort((a, b) => a.revelation_order - b.revelation_order)
+  const filteredSurahs = (allChapters || [])
+    .slice()
+    .sort((a, b) => a.id - b.id)
     .filter(s => s.name_simple.toLowerCase().includes(searchQuery.toLowerCase()));
 
   return (
     <div className="relative" ref={dropdownRef}>
-      <div 
+      <button 
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 px-3 py-1.5 rounded-lg transition-colors group"
+        className="flex items-center gap-2 px-3 py-1.5 rounded-xl hover:bg-theme-soft transition-colors group cursor-pointer"
+        aria-expanded={isOpen}
       >
-        <span className="font-bold text-lg text-gray-800">
+        <span className="font-bold text-base md:text-lg theme-text">
           {currentSurah.id}. {currentSurah.name_simple}
         </span>
         <RiArrowDownSLine 
-          size={20} 
-          className={`text-gray-400 group-hover:text-gray-800 transition-transform ${isOpen ? 'rotate-180' : ''}`} 
+          size={18} 
+          className={`theme-subtle group-hover:theme-text transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} 
         />
-      </div>
+      </button>
 
       {isOpen && (
-        <div className="absolute top-full left-0 mt-2 w-[320px] bg-white border border-gray-100 shadow-2xl rounded-xl overflow-hidden z-[100]">
-          <div className="p-4 bg-gray-50/50 border-b border-gray-50 relative">
-            <button onClick={() => setIsOpen(false)} className="absolute top-2 right-2 text-gray-400">
-              <RiCloseLine size={20} />
+        <div className="absolute top-full left-0 mt-2 w-[300px] sm:w-[340px] theme-card p-0 shadow-2xl overflow-hidden z-[100] border border-theme">
+          <div className="p-3.5 bg-theme-soft border-b border-theme flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-wider theme-subtle">
+              Surah Navigator
+            </span>
+            <button 
+              onClick={() => setIsOpen(false)} 
+              className="theme-subtle hover:theme-text p-1"
+            >
+              <RiCloseLine size={18} />
             </button>
-            <p className="text-[13px] text-gray-600">
-              Note: you're navigating by the order of revelation.
-            </p>
           </div>
 
-          <div className="p-3 border-b border-gray-50">
-            <div className="flex items-center gap-2 bg-gray-100 px-3 py-2 rounded-lg">
-              <RiSearchLine size={18} className="text-gray-400" />
+          <div className="p-2.5 border-b border-theme bg-theme-card">
+            <div className="relative">
+              <RiSearchLine size={16} className="absolute left-3 top-1/2 -translate-y-1/2 theme-subtle" />
               <input 
                 type="text" 
-                placeholder="Search Surah"
-                className="bg-transparent border-none outline-none text-sm w-full"
+                placeholder="Search Surah by name..."
+                className="theme-input !py-1.5 pl-9 text-xs !min-h-[2.2rem]"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                autoFocus
               />
             </div>
           </div>
 
-          <div className="max-h-[350px] overflow-y-auto">
-            {filteredSurahs.map((surah) => (
-              <div 
-                key={surah.id}
-                onClick={() => {
-                  navigate(`/${surah.id}`);
-                  setIsOpen(false);
-                }}
-                className={`flex items-center gap-4 px-5 py-3 hover:bg-teal-50/30 cursor-pointer ${surah.id === currentSurah.id ? 'bg-teal-50 border-l-4 border-[#2ca4ab]' : ''}`}
-              >
-                <span className="text-sm font-bold text-gray-400 w-4">{surah.revelation_order}</span>
-                <span className="text-[15px] font-medium text-gray-800">{surah.name_simple}</span>
-              </div>
-            ))}
+          <div className="max-h-[320px] overflow-y-auto divide-y divide-theme/40">
+            {filteredSurahs.map((surah) => {
+              const isSelected = surah.id === currentSurah.id;
+              return (
+                <div 
+                  key={surah.id}
+                  onClick={() => {
+                    navigate(`/surah/${surah.id}`);
+                    setIsOpen(false);
+                  }}
+                  className={`flex items-center justify-between px-4 py-2.5 hover:bg-accent-soft cursor-pointer transition-colors ${
+                    isSelected ? 'bg-accent-soft border-l-4 border-[var(--accent)]' : ''
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="ayah-number !w-6 !h-6 !min-w-6 text-[10px]">
+                      {surah.id}
+                    </span>
+                    <span className={`text-sm ${isSelected ? 'font-bold theme-accent' : 'theme-text'}`}>
+                      {surah.name_simple}
+                    </span>
+                  </div>
+                  <span className="font-arabic text-base theme-muted">
+                    {surah.name_arabic}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

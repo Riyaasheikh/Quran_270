@@ -8,8 +8,7 @@ const QuickActions = ({ allChapters }) => {
   const [isPopOpen, setIsPopOpen] = useState(false);
 
   return (
-    <div className="flex flex-col sm:flex-row justify-start w-full gap-3 mt-8 relative px-2">
-      
+    <div className="flex flex-col sm:flex-row justify-start w-full gap-3 mt-8 relative ">
       <button 
         onClick={() => setIsNavOpen(true)}
         className="flex items-center justify-center sm:justify-start gap-3 px-6 py-3 bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-transparent hover:border-[#2ca4ab] hover:shadow-xl transition-all active:scale-95 group"

@@ -1,63 +1,147 @@
-import React, { useState } from 'react';
-import SurahSection from '../components/surah/SurahSection';
-import JuzSection from '../components/juz/Juz';
-import RevelationSection from '../components/revelation/RevelationSection';
-import SectionWrapper from '../ui/SectionWrapper';
+import React, { useState } from "react";
+
+import SurahSection from "../components/surah/SurahSection";
+import JuzSection from "../components/juz/Juz";
+import RevelationSection from "../components/revelation/RevelationSection";
+
+import SectionWrapper from "../ui/SectionWrapper";
 
 const QuranTab = () => {
-  const [activeTab, setActiveTab] = useState('Surah');
+
+  const [activeTab, setActiveTab] =
+    useState("Surah");
+
+  const tabs = [
+    "Surah",
+    "Juz",
+    "Revelation Order",
+  ];
+
 
   const renderContent = () => {
+
     switch (activeTab) {
-      case 'Surah':
+
+      case "Surah":
         return <SurahSection />;
-      case 'Juz':
+
+      case "Juz":
         return <JuzSection />;
-      case 'Revelation Order':
+
+      case "Revelation Order":
         return <RevelationSection />;
+
       default:
         return <SurahSection />;
+
     }
+
   };
 
-  const tabs = ['Surah', 'Juz', 'Revelation Order'];
 
   return (
     <SectionWrapper>
-      {/* Background set to Antique White */}
-      <div className="w-full bg-[#fcfaf7] min-h-screen pt-8">
-        <div className="max-w-[1400px] mx-auto px-6">
-          
-          {/* Tab Navigation Container */}
-          <div className="flex items-center border-b border-[#e8e1d5] overflow-x-auto no-scrollbar">
-            {tabs.map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-8 py-5 text-[16px] font-black uppercase tracking-[0.2em] transition-all relative whitespace-nowrap ${
-                  activeTab === tab 
-                    ? 'text-[#8c7355]' 
-                    : 'text-[#bfa07d] hover:text-[#8c7355]'
-                }`}
-              >
-                {tab}
-                
-                {/* Gold Animated Indicator */}
-                {activeTab === tab && (
-                  <div className="absolute bottom-0 left-0 w-full flex justify-center">
-                    <div className="w-full h-[2.5px] bg-[#8c7355] rounded-t-full shadow-[0_-2px_8px_rgba(140,115,85,0.3)]" />
-                  </div>
-                )}
-              </button>
-            ))}
-          </div>
+
+      <section className="theme-page min-h-screen pt-8">
+
+        <div className="max-w-[1400px] mx-auto px-4 md:px-6">
+
+          {/* Tabs */}
+          <nav
+            className="
+              flex
+              items-center
+              border-b
+              overflow-x-auto
+              no-scrollbar
+            "
+            style={{
+              borderColor: "var(--border)",
+            }}
+            role="tablist"
+          >
+
+            {tabs.map((tab) => {
+
+              const active =
+                activeTab === tab;
+
+              return (
+                <button
+                  key={tab}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() =>
+                    setActiveTab(tab)
+                  }
+                  className={`
+                    relative
+                    shrink-0
+                    px-6
+                    md:px-8
+                    py-5
+                    text-sm
+                    md:text-[15px]
+                    font-black
+                    uppercase
+                    tracking-[0.16em]
+                    transition-all
+                    ${
+                      active
+                        ? "text-accent"
+                        : "theme-muted hover:text-theme"
+                    }
+                  `}
+                >
+
+                  {tab}
+
+                  {active && (
+                    <span
+                      className="
+                        absolute
+                        bottom-[-1px]
+                        left-1/2
+                        -translate-x-1/2
+                        w-12
+                        md:w-full
+                        max-w-28
+                        h-[3px]
+                        rounded-t-full
+                      "
+                      style={{
+                        background:
+                          "var(--gradient-gold)",
+                      }}
+                    />
+                  )}
+
+                </button>
+              );
+
+            })}
+
+          </nav>
+
         </div>
 
-        {/* Dynamic Content Area */}
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+
+        {/* Content */}
+        <div
+          key={activeTab}
+          className="
+            animate-in
+            fade-in
+            slide-in-from-bottom-2
+            duration-500
+          "
+        >
           {renderContent()}
         </div>
-      </div>
+
+      </section>
+
     </SectionWrapper>
   );
 };

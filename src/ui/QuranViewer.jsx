@@ -1,6 +1,16 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, {
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+
 import SectionWrapper from "./SectionWrapper";
-import { RiArrowLeftSLine, RiArrowRightSLine, RiLoader4Line } from "@remixicon/react";
+
+import {
+  RiArrowLeftSLine,
+  RiArrowRightSLine,
+  RiLoader4Line,
+} from "@remixicon/react";
 
 const TOTAL_PAGES = 604;
 
@@ -8,121 +18,376 @@ const getImageUrl = (page) =>
   `http://localhost:8000/images/quran_page/${page}.png`;
 
 export default function QuranViewer() {
+
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [jump, setJump] = useState("");
+
   const touchStartX = useRef(null);
 
+
+  /* -------------------------------------------------------
+     PRELOAD ADJACENT PAGES
+     ------------------------------------------------------- */
+
   useEffect(() => {
-    [page + 1, page - 1].filter((p) => p >= 1 && p <= TOTAL_PAGES).forEach((p) => {
-      const img = new Image();
-      img.src = getImageUrl(p);
+
+    const pages = [
+      page - 1,
+      page + 1,
+    ].filter(
+      (currentPage) =>
+        currentPage >= 1 &&
+        currentPage <= TOTAL_PAGES
+    );
+
+    pages.forEach((currentPage) => {
+      const image = new Image();
+      image.src = getImageUrl(currentPage);
     });
+
   }, [page]);
+
+
+  /* -------------------------------------------------------
+     KEYBOARD NAVIGATION
+     ------------------------------------------------------- */
 
   useEffect(() => {
-    const handleKey = (e) => {
-      if (e.key === "ArrowLeft") goNext();
-      if (e.key === "ArrowRight") goPrev();
+
+    const handleKeyDown = (event) => {
+
+      if (event.key === "ArrowLeft") {
+        goNext();
+      }
+
+      if (event.key === "ArrowRight") {
+        goPrev();
+      }
+
     };
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
+
+    window.addEventListener(
+      "keydown",
+      handleKeyDown
+    );
+
+    return () => {
+      window.removeEventListener(
+        "keydown",
+        handleKeyDown
+      );
+    };
+
   }, [page]);
 
-  const onTouchStart = (e) => (touchStartX.current = e.touches[0].clientX);
-  const onTouchEnd = (e) => {
-    const endX = e.changedTouches[0].clientX;
-    const diff = touchStartX.current - endX;
-    if (Math.abs(diff) > 50) {
-      if (diff > 0) goNext();
-      else goPrev();
-    }
+
+  /* -------------------------------------------------------
+     TOUCH NAVIGATION
+     ------------------------------------------------------- */
+
+  const onTouchStart = (event) => {
+    touchStartX.current =
+      event.touches[0].clientX;
   };
 
-  const goNext = () => page < TOTAL_PAGES && (setLoading(true), setPage((p) => p + 1));
-  const goPrev = () => page > 1 && (setLoading(true), setPage((p) => p - 1));
+
+  const onTouchEnd = (event) => {
+
+    if (touchStartX.current === null) {
+      return;
+    }
+
+    const endX =
+      event.changedTouches[0].clientX;
+
+    const difference =
+      touchStartX.current - endX;
+
+    touchStartX.current = null;
+
+    if (Math.abs(difference) < 50) {
+      return;
+    }
+
+    if (difference > 0) {
+      goNext();
+    } else {
+      goPrev();
+    }
+
+  };
+
+
+  /* -------------------------------------------------------
+     PAGE NAVIGATION
+     ------------------------------------------------------- */
+
+  const goNext = () => {
+
+    if (page >= TOTAL_PAGES) {
+      return;
+    }
+
+    setLoading(true);
+    setPage((current) => current + 1);
+  };
+
+
+  const goPrev = () => {
+
+    if (page <= 1) {
+      return;
+    }
+
+    setLoading(true);
+    setPage((current) => current - 1);
+  };
+
+
+  /* -------------------------------------------------------
+     JUMP
+     ------------------------------------------------------- */
 
   const jumpToPage = () => {
-    const p = parseInt(jump);
-    if (p >= 1 && p <= TOTAL_PAGES) {
+
+    const requestedPage =
+      Number.parseInt(jump, 10);
+
+    if (
+      Number.isInteger(requestedPage) &&
+      requestedPage >= 1 &&
+      requestedPage <= TOTAL_PAGES
+    ) {
       setLoading(true);
-      setPage(p);
+      setPage(requestedPage);
       setJump("");
     }
+
   };
+
 
   return (
     <SectionWrapper>
-      {/* Reduced py-2 to pt-0 pb-2 to snap content to the top */}
-      <div className="flex flex-col items-center pt-0 pb-2 w-full">
-        
-        {/* PAGE INDICATOR - Tightened margin */}
-        <div className="flex items-center justify-center mb-1 gap-3 text-[#8c7355] font-black text-xs uppercase tracking-widest opacity-80">
-          <span>{page} / {TOTAL_PAGES}</span>
+
+      <div
+        className="
+          w-full
+          flex
+          flex-col
+          items-center
+          pt-1
+          pb-4
+        "
+      >
+
+        {/* Page counter */}
+        <div className="mb-3">
+
+          <span className="text-xs font-black uppercase tracking-[0.2em] text-gold">
+            Page {page}
+            <span className="theme-subtle mx-2">
+              /
+            </span>
+            {TOTAL_PAGES}
+          </span>
+
         </div>
 
-        {/* MAIN VIEWER - Removed aspect-[2/3] to stop forced height gaps */}
-        <div 
-          className="relative w-full max-w-[550px] flex items-center justify-center"
+
+        {/* Viewer */}
+        <div
+          className="
+            relative
+            w-full
+            max-w-[620px]
+            flex
+            items-center
+            justify-center
+          "
           onTouchStart={onTouchStart}
           onTouchEnd={onTouchEnd}
         >
-          {/* LEFT ARROW */}
+
+          {/* Previous */}
           <button
             onClick={goPrev}
-            className="absolute left-2 md:-left-12 z-30 p-1 md:p-2 bg-[#8c7355] text-white rounded-full hover:scale-110 active:scale-95 transition-all shadow-md"
-            aria-label="Previous Page"
+            disabled={page === 1}
+            className="
+              absolute
+              left-1
+              md:-left-14
+              z-30
+              w-10
+              h-10
+              md:w-11
+              md:h-11
+              rounded-full
+              flex
+              items-center
+              justify-center
+              bg-theme-card
+              border
+              border-theme
+              text-theme
+              shadow-lg
+              hover:text-accent
+              hover:border-theme-strong
+              hover:scale-110
+              disabled:opacity-30
+              disabled:pointer-events-none
+              transition-all
+            "
+            aria-label="Previous page"
           >
             <RiArrowLeftSLine size={23} />
           </button>
 
-          {/* RIGHT ARROW */}
+
+          {/* Next */}
           <button
             onClick={goNext}
-            className="absolute -right-3 md:-right-12 z-30 p-1 md:p-2 bg-[#8c7355] text-white rounded-full hover:scale-110 active:scale-95 transition-all shadow-md"
-            aria-label="Next Page"
+            disabled={page === TOTAL_PAGES}
+            className="
+              absolute
+              right-1
+              md:-right-14
+              z-30
+              w-10
+              h-10
+              md:w-11
+              md:h-11
+              rounded-full
+              flex
+              items-center
+              justify-center
+              bg-theme-card
+              border
+              border-theme
+              text-theme
+              shadow-lg
+              hover:text-accent
+              hover:border-theme-strong
+              hover:scale-110
+              disabled:opacity-30
+              disabled:pointer-events-none
+              transition-all
+            "
+            aria-label="Next page"
           >
             <RiArrowRightSLine size={23} />
           </button>
 
-          {/* IMAGE AREA - Changed to min-h to prevent massive empty space */}
-          <div className="relative w-full min-h-[300px] flex items-center justify-center">
+
+          {/* Image */}
+          <div
+            className="
+              relative
+              w-full
+              min-h-[300px]
+              flex
+              items-center
+              justify-center
+              rounded-2xl
+              overflow-hidden
+              bg-theme-card
+              border
+              border-theme
+              shadow-xl
+            "
+          >
+
             {loading && (
-              <div className="absolute inset-0 flex items-center justify-center z-10">
-                <RiLoader4Line className="w-8 h-8 text-[#8c7355] animate-spin" />
+              <div
+                className="
+                  absolute
+                  inset-0
+                  flex
+                  items-center
+                  justify-center
+                  z-10
+                  bg-theme-card
+                "
+              >
+                <RiLoader4Line
+                  size={34}
+                  className="text-accent animate-spin"
+                />
               </div>
             )}
-            
+
             <img
               key={page}
               src={getImageUrl(page)}
-              alt={`Quran Page ${page}`}
+              alt={`Quran page ${page}`}
               onLoad={() => setLoading(false)}
-              className={`w-full h-auto max-h-[70vh] object-contain transition-opacity duration-300 ${
-                loading ? "opacity-0" : "opacity-100"
-              }`}
+              onError={() => setLoading(false)}
+              className={`
+                w-full
+                h-auto
+                max-h-[76vh]
+                object-contain
+                transition-opacity
+                duration-300
+                ${
+                  loading
+                    ? "opacity-0"
+                    : "opacity-100"
+                }
+              `}
+              draggable="false"
             />
+
           </div>
+
         </div>
 
-        {/* JUMP CONTROL - Reduced mt to bring it closer to the image */}
-        <div className="flex items-center gap-2 ">
+
+        {/* Jump controls */}
+        <div className="flex items-center gap-2 mt-4">
+
           <input
             type="number"
+            min="1"
+            max={TOTAL_PAGES}
             value={jump}
-            onChange={(e) => setJump(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && jumpToPage()}
-            placeholder="Page.."
-            className="w-16 py-1 text-normal text-center font-bold text-gray-700 bg-transparent border border-gray-300 rounded focus:border-[#8c7355] focus:outline-none transition-colors"
+            onChange={(event) =>
+              setJump(event.target.value)
+            }
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                jumpToPage();
+              }
+            }}
+            placeholder="Page"
+            aria-label="Page number"
+            className="
+              theme-input
+              w-20
+              py-2
+              px-2
+              text-center
+              text-sm
+              font-bold
+            "
           />
+
           <button
             onClick={jumpToPage}
-            className="text-[#8c7355] text-[14px] text-center border border-gray-300 px-3 py-1 font-black rounded uppercase tracking-widest hover:opacity-70"
+            className="
+              theme-button-outline
+              text-xs
+              uppercase
+              tracking-[0.15em]
+            "
           >
             Jump
           </button>
+
         </div>
+
       </div>
+
     </SectionWrapper>
   );
 }

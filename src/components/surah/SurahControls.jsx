@@ -3,21 +3,22 @@ import { RiPlayFill, RiArrowDownSLine } from '@remixicon/react';
 
 const SurahControls = ({ onPlay, translation, onOpenTranslation }) => {
   return (
-    <div className="max-w-5xl mx-auto pt-10 px-6 flex justify-center gap-3">
+    <div className="max-w-5xl mx-auto pt-6 pb-2 px-6 flex items-center justify-center gap-3">
       <button
         onClick={onPlay}
-        className="flex items-center gap-2 px-6 py-2 border border-gray-200 rounded-full text-[14px] font-bold text-gray-700 hover:bg-gray-50 transition-colors"
+        className="theme-button-outline !rounded-full !px-5 !py-2 text-xs font-bold gap-2 shadow-xs"
       >
-        <RiPlayFill size={18} className="text-[#2ca4ab]" />
-        Listen
+        <RiPlayFill size={16} className="theme-accent" />
+        <span>Listen</span>
       </button>
 
       <button
         onClick={onOpenTranslation}
-        className="flex items-center gap-2 px-6 py-2 border border-gray-200 rounded-full text-[14px] font-bold text-gray-700 hover:bg-gray-50 transition-colors"
+        className="theme-button-outline !rounded-full !px-5 !py-2 text-xs font-bold gap-2 shadow-xs"
       >
-        Translation: {translation.name}
-        <RiArrowDownSLine size={16} className="text-gray-400" />
+        <span className="theme-muted">Translation:</span>
+        <span className="theme-text">{translation.name}</span>
+        <RiArrowDownSLine size={16} className="theme-subtle" />
       </button>
     </div>
   );

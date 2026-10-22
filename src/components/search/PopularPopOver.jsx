@@ -12,7 +12,6 @@ const PopularPopOver = ({ onClose }) => {
   ];
 
   return (
-    /* Change right-0 to left-0 and increase z-index to 150 */
     <div className="absolute top-full left-0 mt-3 w-[290px] bg-white border border-gray-100 shadow-[0_10px_40px_rgba(0,0,0,0.1)] rounded-2xl z-[150] animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-200">
       <div className="p-4 border-b border-gray-50 flex items-center justify-between bg-gray-50/50 rounded-t-2xl">
         <div className="flex items-center gap-2 text-[#2ca4ab]">

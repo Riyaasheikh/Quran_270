@@ -10,6 +10,10 @@ import Bookmarks from "../pages/Bookmarks";
 import SurahDetail from "../pages/SurahDetails";
 import AboutUs from "../pages/AboutUs";
 import Profile from "../pages/Profile";
+import Supplications from '../pages/Supplications';
+import PrayerTimes from "../pages/PrayerTimes";
+import FastingHub from "../pages/FastingHub";
+import HadithPage from "../pages/HadithPage";
 
 export const router = createBrowserRouter([
   {
@@ -41,6 +45,19 @@ export const router = createBrowserRouter([
      element:<Bookmarks/>
   },
   {
+  path: "/prayer-times",
+  element: <PrayerTimes />,
+},
+{ 
+  path:'/hadith',
+  element:<HadithPage/>,
+
+},
+{
+  path: "/fasting",
+  element: <FastingHub />,
+},
+  {
     path:'/about',
     element:<AboutUs/>
   },
@@ -65,6 +82,10 @@ export const router = createBrowserRouter([
     element:<ForgotPassword/>
 
   },
+  {
+  path: "/supplications",
+  element: <Supplications />,
+},
   {
  // In your router configuration file
   path: '/juz/:juzId',

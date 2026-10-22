@@ -230,11 +230,11 @@ const SearchBar = ({ allChapters = [] }) => {
             className={`transition-colors ${
               isListening
                 ? "text-[#C0E2CA] animate-pulse"
-                : "text-gray-400 hover:text-[#8c7355]"
+                : "text-gray-400 rounded-lg bg-[#COE2CA] hover:text-[#8c7355]"
             }`}
           >
             {isListening ? (
-              <RiMicFill size={24} />
+              <RiMicFill size={24}  />
             ) : (
               <RiMicLine size={24} />
             )}

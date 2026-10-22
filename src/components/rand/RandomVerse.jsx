@@ -1,9 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { RiRefreshLine, RiLoader4Line, RiArrowRightLine } from '@remixicon/react';
-// Ensure both functions are imported here
-import { fetchSpecificVerse, fetchChapterDetail } from '../../api/quranApi'; 
-import SectionWrapper from '../../ui/SectionWrapper';
+import React, { useEffect, useState } from "react";
+
+import {
+  RiRefreshLine,
+  RiLoader4Line,
+  RiArrowRightLine,
+} from "@remixicon/react";
+
+import { Link } from "react-router-dom";
+
+import {
+  fetchSpecificVerse,
+  fetchChapterDetail,
+} from "../../api/quranApi";
+
+import SectionWrapper from "../../ui/SectionWrapper";
 
 const RandomVerse = () => {
   const [verse, setVerse] = useState(null);
@@ -11,23 +21,34 @@ const RandomVerse = () => {
 
   const getRandomVerse = async () => {
     setLoading(true);
+
     try {
-      // 1. Pick a random Surah (1 to 114)
-      const randomSurahId = Math.floor(Math.random() * 114) + 1;
-      
-      // 2. Fetch Surah details to get the correct verse count
-      const chapter = await fetchChapterDetail(randomSurahId);
-      const totalVerses = chapter.verses_count;
-      
-      // 3. Pick a random verse number within that Surah
-      const randomVerseNumber = Math.floor(Math.random() * totalVerses) + 1;
-      const verseKey = `${randomSurahId}:${randomVerseNumber}`;
-      
-      // 4. Fetch the specific verse using the formatted key (e.g., "18:10")
-      const data = await fetchSpecificVerse(verseKey);
+      const randomSurahId =
+        Math.floor(Math.random() * 114) + 1;
+
+      const chapter =
+        await fetchChapterDetail(randomSurahId);
+
+      const totalVerses =
+        Number(chapter?.verses_count) || 1;
+
+      const randomVerseNumber =
+        Math.floor(Math.random() * totalVerses) + 1;
+
+      const verseKey =
+        `${randomSurahId}:${randomVerseNumber}`;
+
+      const data =
+        await fetchSpecificVerse(verseKey);
+
       setVerse(data);
-    } catch (err) {
-      console.error("Failed to fetch random verse:", err);
+    } catch (error) {
+      console.error(
+        "Failed to fetch random verse:",
+        error
+      );
+
+      setVerse(null);
     } finally {
       setLoading(false);
     }
@@ -37,63 +58,187 @@ const RandomVerse = () => {
     getRandomVerse();
   }, []);
 
-  if (loading) return (
-    <div className="bg-white p-12 rounded-2xl border border-gray-100 flex flex-col items-center justify-center gap-3">
-      <RiLoader4Line className="animate-spin text-[#C0E2CA]" size={32} />
-      <p className="text-sm text-gray-400 font-medium animate-pulse">Selecting a verse...</p>
-    </div>
-  );
+  if (loading) {
+    return (
+      <SectionWrapper>
+        <div className="theme-card p-12 flex flex-col items-center justify-center gap-4">
 
-  // Split verse key for the Link (e.g., "18:10" -> ["18", "10"])
-  const [sId, vNum] = verse?.verse_key?.split(':') || [];
+          <RiLoader4Line
+            size={32}
+            className="text-accent animate-spin"
+          />
+
+          <p className="text-sm font-medium theme-muted animate-pulse">
+            Selecting a verse...
+          </p>
+
+        </div>
+      </SectionWrapper>
+    );
+  }
+
+  if (!verse) {
+    return (
+      <SectionWrapper>
+        <div className="theme-card p-10 text-center">
+          <p className="theme-muted">
+            Unable to load a verse right now.
+          </p>
+
+          <button
+            onClick={getRandomVerse}
+            className="theme-button mt-5"
+          >
+            Try Again
+          </button>
+        </div>
+      </SectionWrapper>
+    );
+  }
+
+  const [sId, vNum] =
+    verse?.verse_key?.split(":") || [];
 
   return (
     <SectionWrapper>
 
-    
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden group hover:shadow-md transition-all duration-500">
-      <div className="p-8">
-        <div className="flex justify-between items-center mb-8">
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#bfa07d] bg-[#C0E2CA] px-4 py-1.5 rounded-full">
-            Verse of the Moment
-          </span>
-          <button 
-            onClick={getRandomVerse}
-            className="p-2 text-gray-300 hover:text-[#C0E2CA] hover:bg-gray-50 rounded-full transition-all duration-300"
-          >
-            <RiRefreshLine size={20} />
-          </button>
-        </div>
+      <article className="theme-card overflow-hidden">
 
-        <div className="space-y-8">
-          {/* Arabic Text */}
-          <p className="text-right font-serif text-3xl md:text-4xl leading-[2.2] text-gray-900 rtl">
-            {verse?.text_uthmani}
-          </p>
-          
-          {/* Translation */}
-          <div className="relative pl-6 border-l-2 border-[#C0E2CA]/20">
-            <p className="text-gray-600 text-base md:text-lg leading-relaxed italic">
-              <span dangerouslySetInnerHTML={{ __html: verse?.translations?.[0]?.text }} />
+        <div className="p-6 md:p-8 lg:p-10">
+
+          {/* Header */}
+          <div className="flex items-center justify-between mb-8">
+
+            <span
+              className="
+                inline-flex
+                items-center
+                rounded-full
+                px-4
+                py-2
+                text-[10px]
+                font-black
+                uppercase
+                tracking-[0.18em]
+                bg-accent-soft
+                text-accent
+              "
+            >
+              Verse of the Moment
+            </span>
+
+            <button
+              onClick={getRandomVerse}
+              className="
+                p-2.5
+                rounded-full
+                theme-muted
+                hover:text-accent
+                hover:bg-accent-soft
+                transition-all
+              "
+              aria-label="Get another random verse"
+            >
+              <RiRefreshLine size={20} />
+            </button>
+
+          </div>
+
+
+          {/* Verse */}
+          <div className="space-y-8">
+
+            <p
+              className="
+                font-quran
+                text-right
+                text-[30px]
+                md:text-[38px]
+                lg:text-[42px]
+              "
+              dir="rtl"
+            >
+              {verse?.text_uthmani}
             </p>
+
+
+            {/* Translation */}
+            <div
+              className="
+                pl-5
+                border-l-2
+              "
+              style={{
+                borderColor: "var(--accent)",
+              }}
+            >
+              <p
+                className="
+                  text-theme-secondary
+                  text-base
+                  md:text-lg
+                  leading-relaxed
+                  italic
+                "
+              >
+                <span
+                  dangerouslySetInnerHTML={{
+                    __html:
+                      verse?.translations?.[0]?.text ||
+                      "Translation unavailable.",
+                  }}
+                />
+              </p>
+            </div>
+
           </div>
+
+
+          {/* Footer */}
+          <div
+            className="
+              mt-10
+              pt-6
+              border-t
+              flex
+              flex-col
+              sm:flex-row
+              sm:items-center
+              sm:justify-between
+              gap-5
+            "
+            style={{
+              borderColor: "var(--border)",
+            }}
+          >
+
+            <div className="flex flex-col">
+
+              <span className="text-[10px] font-black uppercase tracking-[0.18em] theme-subtle">
+                Reference
+              </span>
+
+              <span className="text-sm font-black text-theme mt-1">
+                {verse?.verse_key}
+              </span>
+
+            </div>
+
+
+            <Link
+              to={`/surah/${sId}/${vNum}`}
+              className="theme-button theme-button-gold"
+            >
+              Go to Verse
+              <RiArrowRightLine size={18} />
+            </Link>
+
+          </div>
+
         </div>
 
-        <div className="mt-10 pt-6 border-t border-gray-50 flex items-center justify-between">
-          <div className="flex flex-col">
-            <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Reference</span>
-            <span className="text-sm font-black text-gray-900">{verse?.verse_key}</span>
-          </div>
-          
-          <Link 
-            to={`/surah/${sId}/${vNum}`}
-            className="flex items-center gap-2 px-5 py-2 bg-[#C0E2CA] text-[#bfa07d] text-sm font-bold rounded-xl  hover:gap-3 transition-all shadow-lg shadow-[#C0E2CA]/20"
-          >
-            Go to Verse <RiArrowRightLine size={18} />
-          </Link>
-        </div>
-      </div>
-    </div>
+      </article>
+
     </SectionWrapper>
   );
 };

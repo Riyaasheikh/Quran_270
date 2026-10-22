@@ -18,12 +18,6 @@ const ExploreTopics = () => {
             Explore Topics
           </h2>
           
-          {/* 
-             flex-nowrap: Keeps everything in one line
-             overflow-x-auto: Enables the horizontal scroll
-             no-scrollbar: Custom utility to hide the bar
-             -mx-4 px-4: Negative margin trick to let items scroll to the screen edge
-          */}
           <div className="flex flex-nowrap overflow-x-auto no-scrollbar  gap-3 -mx-4 px-4 md:mx-0 md:px-0 md:flex-wrap">
             {topics.map((topic, index) => (
               <button

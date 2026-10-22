@@ -10,7 +10,6 @@ export const useChapters = () => {
   });
 };
 
-
 export const useSurah = (chapterId) => {
   return useQuery({
     queryKey: ['surah', chapterId],

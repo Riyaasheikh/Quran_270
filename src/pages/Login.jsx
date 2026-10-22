@@ -1,7 +1,15 @@
 import React, { useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { RiArrowLeftLine, RiGoogleFill, RiEyeLine, RiEyeOffLine } from '@remixicon/react';
+import { 
+  RiArrowLeftLine, 
+  RiGoogleFill, 
+  RiEyeLine, 
+  RiEyeOffLine, 
+  RiLoader4Line, 
+  RiShieldCheckLine,
+  RiErrorWarningLine
+} from '@remixicon/react';
 import api from '../lib/axios';
 
 const Login = () => {
@@ -23,102 +31,162 @@ const Login = () => {
 
     try {
       const res = await api.post('/api/login', { email, password });
-
       login(res.data.user);
       navigate(returnTo, { replace: true });
     } catch (err) {
-      setError(err.response?.data?.message || 'Invalid credentials.');
+      setError(err.response?.data?.message || 'Invalid credentials. Please verify your email and password.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col items-center justify-center px-6 py-12 font-sans text-[#1f2124]">
-      <div className="w-full max-w-[400px] flex flex-col items-center">
+    <div className="theme-page min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 py-12 theme-transition relative overflow-hidden">
+      
+      {/* Subtle Background Glow */}
+      <div 
+        className="absolute top-1/4 -right-24 w-80 h-80 rounded-full opacity-15 pointer-events-none blur-3xl"
+        style={{ background: 'var(--gradient-primary)' }}
+      />
+      <div 
+        className="absolute bottom-1/4 -left-24 w-80 h-80 rounded-full opacity-10 pointer-events-none blur-3xl"
+        style={{ background: 'var(--gradient-gold)' }}
+      />
 
-        <h3 className="text-2xl md:text-3xl font-bold mb-2 text-center">Welcome back</h3>
-        <p className="text-sm text-gray-500 mb-8 text-center">Sign in to your account</p>
-
-        {error && (
-          <div className="w-full mb-4 px-4 py-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl">
-            {error}
+      <div className="w-full max-w-[430px] relative z-10 flex flex-col items-center">
+        
+        {/* Card Container */}
+        <div className="w-full theme-card p-7 sm:p-9 shadow-xl">
+          
+          {/* Header */}
+          <div className="text-center mb-8">
+            <div className="w-12 h-12 rounded-2xl bg-theme-soft border border-theme flex items-center justify-center mx-auto mb-4">
+              <RiShieldCheckLine size={24} className="theme-accent" />
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight theme-text">
+              Welcome back
+            </h1>
+            <p className="text-xs sm:text-sm theme-muted mt-1.5">
+              Sign in to sync your recitations and bookmarks
+            </p>
           </div>
-        )}
 
-        <form onSubmit={handleSubmit} className="w-full space-y-4">
-          <input
-            type="email"
-            placeholder="Email address"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            className="w-full px-4 py-4 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#2ca4ab] focus:border-[#2ca4ab] transition-all placeholder:text-gray-400"
-          />
-
-          <div className="relative">
-            <input
-              type={showPassword ? 'text' : 'password'}
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full px-4 py-4 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#2ca4ab] focus:border-[#2ca4ab] transition-all placeholder:text-gray-400 pr-12"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+          {/* Error Banner */}
+          {error && (
+            <div 
+              role="alert"
+              className="w-full mb-6 p-3.5 rounded-xl border flex items-start gap-2.5 text-xs sm:text-sm leading-relaxed"
+              style={{
+                backgroundColor: 'color-mix(in srgb, var(--danger) 10%, transparent)',
+                borderColor: 'color-mix(in srgb, var(--danger) 30%, transparent)',
+                color: 'var(--danger)'
+              }}
             >
-              {showPassword ? <RiEyeOffLine size={20} /> : <RiEyeLine size={20} />}
+              <RiErrorWarningLine size={18} className="shrink-0 mt-0.5" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="w-full space-y-4">
+            <div>
+              <label className="block text-xs font-semibold theme-secondary uppercase tracking-wider mb-2">
+                Email Address
+              </label>
+              <input
+                type="email"
+                placeholder="name@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="theme-input"
+              />
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs font-semibold theme-secondary uppercase tracking-wider">
+                  Password
+                </label>
+                <Link 
+                  to="/forgot-password" 
+                  className="text-xs theme-accent font-medium hover:underline"
+                >
+                  Forgot password?
+                </Link>
+              </div>
+
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="theme-input pr-11"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 theme-subtle hover:theme-secondary transition-colors p-1"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <RiEyeOffLine size={18} /> : <RiEyeLine size={18} />}
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="theme-button w-full !py-3.5 !rounded-xl text-sm font-bold shadow-md mt-2"
+            >
+              {isSubmitting ? (
+                <>
+                  <RiLoader4Line size={18} className="animate-spin" />
+                  <span>Signing in...</span>
+                </>
+              ) : (
+                'Sign In'
+              )}
             </button>
+          </form>
+
+          {/* Divider */}
+          <div className="flex items-center w-full my-6 gap-3">
+            <div className="theme-divider flex-1" />
+            <span className="text-[11px] font-bold uppercase tracking-wider theme-subtle">
+              or
+            </span>
+            <div className="theme-divider flex-1" />
           </div>
 
-          <div className="text-right">
-            <Link to="/forgot-password" className="text-sm text-[#2ca4ab] hover:underline">
-              Forgot password?
-            </Link>
-          </div>
-
+          {/* Google SSO Button */}
           <button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full py-4 bg-[#2ca4ab] text-white font-bold rounded-xl hover:bg-[#258d93] transition-colors shadow-sm disabled:opacity-60"
+            type="button"
+            onClick={() => window.location.href = 'http://localhost:8000/auth/google/redirect'}
+            className="theme-button-outline w-full !py-3.5 !rounded-xl text-sm font-semibold flex items-center justify-center gap-2.5"
           >
-            {isSubmitting ? 'Signing in...' : 'Sign In'}
+            <RiGoogleFill size={19} className="text-rose-500" />
+            <span>Continue with Google</span>
           </button>
-        </form>
 
-        {/* Divider */}
-        <div className="flex items-center w-full my-6 gap-3">
-          <div className="flex-1 h-px bg-gray-200" />
-          <span className="text-xs text-gray-400">or</span>
-          <div className="flex-1 h-px bg-gray-200" />
+          {/* Signup Switcher */}
+          <p className="text-xs sm:text-sm theme-muted text-center mt-7">
+            Don't have an account?{' '}
+            <Link to="/signup" className="theme-accent font-semibold hover:underline">
+              Create an account
+            </Link>
+          </p>
         </div>
 
-        {/* Google Button */}
-        <button
-          onClick={() => window.location.href = 'http://localhost:8000/auth/google/redirect'}
-          className="w-full py-4 border border-gray-300 rounded-xl flex items-center justify-center gap-3 font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
-        >
-          <RiGoogleFill size={20} className="text-red-500" />
-          Continue with Google
-        </button>
-
-        <p className="text-sm text-gray-500 mt-6">
-          Don't have an account?{' '}
-          <Link to="/signup" className="text-[#2ca4ab] font-semibold hover:underline">
-            Register here
-          </Link>
-        </p>
-
-        {/* Back Button */}
+        {/* Back Link */}
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center justify-center gap-2 mt-8 text-gray-800 font-semibold hover:opacity-70 transition-opacity"
+          className="inline-flex items-center justify-center gap-2 mt-6 theme-muted hover:theme-text text-sm font-medium transition-colors"
         >
-          <RiArrowLeftLine size={20} />
-          <span>Back</span>
+          <RiArrowLeftLine size={18} />
+          <span>Return to previous page</span>
         </button>
 
       </div>

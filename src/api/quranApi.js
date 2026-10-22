@@ -11,14 +11,13 @@ export const fetchChapters = async () => {
   const response = await quranApi.get("/chapters?language=en");
   return response.data.chapters;
 };
-// api/quranApi.js
 
 export const fetchSurahVerses = async (chapterId, translationId = "85") => {
   const response = await quranApi.get(`/verses/by_chapter/${chapterId}`, {
     params: {
       language: "en",
       words: true,
-      translations: translationId, // Dynamic ID
+      translations: translationId, 
       fields: "text_uthmani,page_number,juz_number",
       per_page: 300,
     },
@@ -26,7 +25,6 @@ export const fetchSurahVerses = async (chapterId, translationId = "85") => {
   return response.data.verses;
 };
 
-// Add this to fetch the list of all available translations
 export const fetchAvailableTranslations = async () => {
   const response = await quranApi.get("/resources/translations");
   return response.data.translations;
@@ -36,8 +34,6 @@ export const fetchChapterDetail = async (chapterId) => {
   const response = await quranApi.get(`/chapters/${chapterId}?language=en`);
   return response.data.chapter;
 };
-
-// Fetches verses for a specific Juz (Continuous reading)
 export const fetchVersesByJuz = async (juzId) => {
   const response = await quranApi.get(`/verses/by_juz/${juzId}`, {
     params: {
@@ -50,18 +46,11 @@ export const fetchVersesByJuz = async (juzId) => {
   return response.data.verses;
 };
 export const searchQuran = async (query) => {
-
   const response = await quranApi.get(`/search`, {
-
     params: { q: query, language: "en", size:5 },
-
   });
-
   return response.data.search.results;
-
 };
-
-// Add to api/quranApi.js
 
 export const fetchSpecificVerse = async (verseKey, translationId = "85") => {
   try {
@@ -82,16 +71,10 @@ export const getPageImageUrl = (pageNumber) => {
   const paddedPage = String(pageNumber).padStart(3, '0');
   return `https://static.quran.com/images/pages/mushaf/v2/${paddedPage}.png`; // use paddedPage
 };
-
-// api/quranApi.js
-// api/quranApi.js
-
 export const getChapterSuggestions = (chapters, query) => {
   if (!query || !Array.isArray(chapters)) return [];
 
   const q = query.toLowerCase().trim();
-
-  // remove words like "surah"
   const cleaned = q
     .replace("surah", "")
     .replace("surat", "")
@@ -130,13 +113,11 @@ export const getChapterSuggestions = (chapters, query) => {
 
   return [];
 };
-
-// Use the existing quranApi axios instance — no fetch(), no undefined variable
 export const fetchTafsirForVerse = async (verseKey, tafsirId = 169) => {
   const response = await quranApi.get(`/tafsirs/${tafsirId}/by_ayah/${verseKey}`, {
     params: { language: 'en' }
   });
-  return response.data.tafsir; // { text, resource_name, language_name, ... }
+  return response.data.tafsir; 
 };
 
 export const fetchAvailableTafsirs = async () => {
@@ -145,17 +126,7 @@ export const fetchAvailableTafsirs = async () => {
   });
   return response.data.tafsirs; 
 };
-// Add this to src/api/quranApi.js
 
-/**
- * Fetches the list of all available chapter reciters
- */
-// --- AUDIO SECTION ---
-
-/**
- * Fetches the list of reciters. 
- * Use this to populate your ReciterSelector component.
- */
 export const fetchChapterReciters = async () => {
   try {
     const response = await quranApi.get('/resources/chapter_reciters', {
@@ -168,19 +139,13 @@ export const fetchChapterReciters = async () => {
   }
 };
 
-/**
- * The most reliable endpoint for audio.
- * Fetches an array of audio files (one for every verse).
- * Works for both playing a single verse and streaming the whole surah.
- */
 export const fetchVerseAudioList = async (reciterId = 7, chapterId) => {
   try {
     const response = await quranApi.get(`/recitations/${reciterId}/by_chapter/${chapterId}`);
-    // The API returns { audio_files: [ { verse_key, url }, ... ] }
     return response.data.audio_files;
   } catch (error) {
     console.error("Audio API Error:", error);
-    return []; // Return empty array so the app doesn't crash
+    return []; 
   }
 };
 

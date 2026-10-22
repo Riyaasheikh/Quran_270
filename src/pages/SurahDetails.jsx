@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useContext, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { 
-  RiBookmarkFill, RiSettings4Line, RiListCheck, RiBookOpenLine 
+  RiSettings4Line,
+  RiLoader4Line
 } from '@remixicon/react';
 import { 
   fetchSurahVerses, fetchChapterDetail, fetchChapters, fetchVerseAudioList 
@@ -31,26 +32,24 @@ const SurahDetail = () => {
   const [chapterData, setChapterData] = useState(null);
   const [allChapters, setAllChapters] = useState([]);
   const [loading, setLoading] = useState(true);
-  
   const [audioList, setAudioList] = useState([]);
   const [currentAudioIndex, setCurrentAudioIndex] = useState(0);
   const [isAudioOpen, setIsAudioOpen] = useState(false);
   const [playMode, setPlayMode] = useState('continuous'); 
-  
   const [viewMode, setViewMode] = useState('verse');
   const [isTransOpen, setIsTransOpen] = useState(false);
   const [isReciterOpen, setIsReciterOpen] = useState(false);
   const [translation, setTranslation] = useState({ id: "85", name: "M.A.S. Abdel Haleem" });
-  
   const [selectedReciter, setSelectedReciter] = useState({ id: 7, reciter_name: 'Mishary Rashid Alafasy' });
   const [userBookmarks, setUserBookmarks] = useState([]);
   const [tafsirVerse, setTafsirVerse] = useState(null);
   const [hadithVerse, setHadithVerse] = useState(null);
 
-  // --- 1. CORE DATA FETCHING ---
   useEffect(() => {
     if (!user) return;
-    api.get('/api/bookmarks').then(res => setUserBookmarks(res.data)).catch(() => {});
+    api.get('/api/bookmarks')
+      .then(res => setUserBookmarks(res.data || []))
+      .catch(() => {});
   }, [user]);
 
   useEffect(() => {
@@ -62,19 +61,16 @@ const SurahDetail = () => {
       fetchChapterDetail(surahId),
       fetchChapters()
     ]).then(([versesData, infoData, chaptersData]) => {
-      setVerses(versesData);
+      setVerses(versesData || []);
       setChapterData(infoData);
-      setAllChapters(chaptersData);
+      setAllChapters(chaptersData || []);
     })
-    .catch(err => console.error("Error loading Surah:", err))
+    .catch(err => console.error("Error loading Surah detail pipeline:", err))
     .finally(() => setLoading(false));
   }, [surahId, translation.id]);
 
-  // --- 2. PROGRESS TRACKING LOGIC ---
   const saveProgress = async (verse) => {
     if (!user || !chapterData) return;
-
-    // Debouncing the API call to save server resources
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     
     saveTimeoutRef.current = setTimeout(async () => {
@@ -87,26 +83,26 @@ const SurahDetail = () => {
           verse_key: verse.verse_key
         });
       } catch (err) {
-        console.error("Failed to save reading progress", err);
+        console.error("Failed to safely stream user reading index node:", err);
       }
-    }, 1000); // Wait for 1 second of "staying" on a verse before saving
+    }, 1200); 
   };
 
-  // --- 3. AUTO-SCROLL TO VERSE ---
   useEffect(() => {
     if (verseNumber && verses.length > 0) {
-      setTimeout(() => {
+      const scrollTimer = setTimeout(() => {
         const element = document.getElementById(`verse-${verseNumber}`);
         if (element) {
           element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          element.classList.add('bg-teal-50/50');
-          setTimeout(() => element.classList.remove('bg-teal-50/50'), 2000);
+          element.classList.add('active');
+          setTimeout(() => element.classList.remove('active'), 2500);
         }
-      }, 800);
+      }, 500);
+
+      return () => clearTimeout(scrollTimer);
     }
   }, [verses, verseNumber]);
 
-  // --- 4. INTERSECTION OBSERVER (Auto-track while scrolling) ---
   useEffect(() => {
     if (!user || verses.length === 0 || viewMode !== 'verse') return;
 
@@ -120,7 +116,7 @@ const SurahDetail = () => {
           }
         });
       },
-      { threshold: 0.6 } // Trigger when 60% of the verse is visible
+      { threshold: 0.55 } 
     );
 
     const cards = document.querySelectorAll('.verse-card');
@@ -132,7 +128,6 @@ const SurahDetail = () => {
     };
   }, [verses, user, viewMode, chapterData]);
 
-  // --- 5. AUDIO & MANUAL PLAY TRACKING ---
   const handlePlayAudio = async (startVerseKey = null) => {
     try {
       const audioData = await fetchVerseAudioList(selectedReciter.id, surahId);
@@ -153,79 +148,124 @@ const SurahDetail = () => {
       
       setIsAudioOpen(true);
     } catch (e) {
-      console.error('Audio error:', e);
+      console.error('Audio stream system interface runtime fault:', e);
     }
   };
 
   if (loading || !chapterData) {
-    return <div className="h-screen flex items-center justify-center">Loading...</div>;
+    return (
+      <div className="theme-page h-screen w-full flex flex-col items-center justify-center gap-3">
+        <RiLoader4Line size={36} className="theme-accent animate-spin" />
+        <span className="text-xs font-bold uppercase tracking-[0.25em] theme-subtle">
+          Loading Sanctuary...
+        </span>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-white text-[#1f2124] font-sans">
-      <Navbar />
+    <div className="theme-page min-h-screen theme-transition flex flex-col justify-between">
+      <div>
+        <Navbar />
 
-      <div className="sticky top-0 border-b bg-white/95 backdrop-blur-sm z-[80] px-4 md:px-10 py-3 flex items-center justify-between shadow-sm">
-        <SurahDropDown currentSurah={chapterData} allChapters={allChapters} />
-        
-        <div className="flex items-center gap-4">
-          <div className="flex bg-gray-100 p-1 rounded-xl">
-            <button 
-              onClick={() => setViewMode('verse')}
-              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${viewMode === 'verse' ? 'bg-white shadow text-gray-900' : 'text-gray-400'}`}
-            >
-              Verse
-            </button>
-            <button 
-              onClick={() => setViewMode('reading')}
-              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${viewMode === 'reading' ? 'bg-white shadow text-gray-900' : 'text-gray-400'}`}
-            >
-              Reading
-            </button>
+        {/* Sticky Controller Toolbar with Blur and Backdrop Tint */}
+        <header className="sticky top-[72px] md:top-[80px] z-30 border-b border-theme bg-theme-overlay backdrop-blur-md px-4 md:px-8 py-3 transition-colors duration-200">
+          <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
+            <SurahDropDown currentSurah={chapterData} allChapters={allChapters} />
+            
+            <div className="flex items-center gap-2.5 sm:gap-4">
+              {/* Capsule View Switcher */}
+              <div 
+                className="flex p-1 rounded-xl border border-theme bg-theme-soft"
+                role="tablist"
+                aria-label="Reading presentation modes"
+              >
+                <button 
+                  role="tab"
+                  aria-selected={viewMode === 'verse'}
+                  onClick={() => setViewMode('verse')}
+                  className={`px-3.5 py-1.5 rounded-lg text-xs font-bold tracking-wider uppercase transition-all duration-200 ${
+                    viewMode === 'verse' 
+                      ? 'bg-theme-card theme-text shadow-xs font-extrabold' 
+                      : 'theme-muted hover:theme-text'
+                  }`}
+                >
+                  Verse
+                </button>
+                <button 
+                  role="tab"
+                  aria-selected={viewMode === 'reading'}
+                  onClick={() => setViewMode('reading')}
+                  className={`px-3.5 py-1.5 rounded-lg text-xs font-bold tracking-wider uppercase transition-all duration-200 ${
+                    viewMode === 'reading' 
+                      ? 'bg-theme-card theme-text shadow-xs font-extrabold' 
+                      : 'theme-muted hover:theme-text'
+                  }`}
+                >
+                  Mushaf
+                </button>
+              </div>
+
+              {/* Reciter / Audio Settings Trigger */}
+              <button 
+                onClick={() => setIsReciterOpen(true)}
+                className="theme-icon-button theme-icon-button-sm"
+                aria-label="Reciter & audio settings"
+                title="Select Reciter"
+              >
+                <RiSettings4Line size={18} />
+              </button>
+            </div>
           </div>
+        </header>
 
-          <button 
-            onClick={() => setIsReciterOpen(true)}
-            className="p-2.5 text-[#2ca4ab] hover:bg-[#2ca4ab]/10 rounded-full transition-all"
-          >
-            <RiSettings4Line size={24} />
-          </button>
-        </div>
+        {/* View Switcher Main Container */}
+        {viewMode === 'verse' ? (
+          <main className="animate-in fade-in duration-300">
+            {/* Audio Listen Bar & Translation Selector */}
+            <SurahControls 
+              onPlay={() => handlePlayAudio()} 
+              translation={translation} 
+              onOpenTranslation={() => setIsTransOpen(true)} 
+            />
+
+            {/* Surah Name & Chapter Overview */}
+            <SurahIntro chapter={chapterData} />
+
+            {/* Verses Container */}
+            <div className="reading-column px-4 md:px-6 pb-24 space-y-4">
+              {verses.map(v => (
+                <div 
+                  key={v.id || v.verse_key} 
+                  id={`verse-${v.verse_number}`} 
+                  data-verse-number={v.verse_number} 
+                  className="verse-card ayah group"
+                >
+                  <VerseCard 
+                    verse={v} 
+                    translationId={translation.id}
+                    isBookmarked={userBookmarks.includes(v.verse_key)}
+                    onPlay={() => handlePlayAudio(v.verse_key)} 
+                    onTafsir={setTafsirVerse}
+                    onHadith={setHadithVerse}
+                    onBookmarkToggle={(added) => {
+                      setUserBookmarks(prev => 
+                        added ? [...prev, v.verse_key] : prev.filter(k => k !== v.verse_key)
+                      );
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+          </main>
+        ) : (
+          <main className="reading-surface max-w-5xl mx-auto my-8 p-4 sm:p-8 animate-in fade-in duration-300">
+            <QuranViewer initialPage={verses[0]?.page_number} />
+          </main>
+        )}
       </div>
 
-      {viewMode === 'verse' ? (
-        <div className="animate-in fade-in duration-700">
-          <SurahControls 
-            onPlay={() => handlePlayAudio()} 
-            translation={translation} 
-            onOpenTranslation={() => setIsTransOpen(true)} 
-          />
-
-          <SurahIntro chapter={chapterData} />
-
-          <div className="max-w-5xl mx-auto px-6 pb-32">
-            {verses.map(v => (
-              <div key={v.id} id={`verse-${v.verse_number}`} data-verse-number={v.verse_number} className="verse-card">
-                <VerseCard 
-                  verse={v} 
-                  translationId={translation.id}
-                  isBookmarked={userBookmarks.includes(v.verse_key)}
-                  onPlay={() => handlePlayAudio(v.verse_key)} 
-                  onTafsir={setTafsirVerse}
-                  onHadith={setHadithVerse}
-                  onBookmarkToggle={(added) => {
-                    setUserBookmarks(prev => added ? [...prev, v.verse_key] : prev.filter(k => k !== v.verse_key));
-                  }}
-                />
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : (
-        <QuranViewer initialPage={verses[0]?.page_number} />
-      )}
-
-      {/* AudioPlayer, Modals, Footer remain same as your provided code */}
+      {/* Drawers & Modals */}
       {isAudioOpen && (
         <AudioPlayer 
           playlist={audioList}

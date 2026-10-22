@@ -1,13 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
-  RiPlayFill, RiFileCopyLine, RiCheckLine,
-  RiEditLine, RiMoreFill, RiBook2Line,
-  RiGraduationCapLine, RiChat3Line, RiLightbulbLine, RiHistoryLine
-} from '@remixicon/react';
-import BookmarkButton from '../../ui/BookmarkButton';
-import { copyVerse } from '../../utils/copyVerse';
+  RiPlayFill,
+  RiFileCopyLine,
+  RiCheckLine,
+  RiBook2Line,
+  RiHistoryLine,
+} from "@remixicon/react";
+import BookmarkButton from "../../ui/BookmarkButton";
+import { copyVerse } from "../../utils/copyVerse";
 
-const VerseCard = ({ verse, translationId, isBookmarked, onBookmarkToggle, onPlay, onTafsir, onHadith }) => {
+const VerseCard = ({
+  verse,
+  translationId,
+  isBookmarked,
+  onBookmarkToggle,
+  onPlay,
+  onTafsir,
+  onHadith,
+}) => {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
@@ -17,19 +27,21 @@ const VerseCard = ({ verse, translationId, isBookmarked, onBookmarkToggle, onPla
   };
 
   return (
-    <div className="group border-b border-gray-100/60 py-16 last:border-0">
-
-      {/* Top action bar */}
-      <div className="flex items-center justify-between mb-12">
-        <div className="flex items-center gap-6 text-gray-400 font-medium">
-          <span className="text-[15px] font-bold text-gray-500">{verse.verse_key}</span>
-
-          <RiPlayFill
-            className="cursor-pointer hover:text-[#2ca4ab] transition-colors"
-            size={24}
+    <article className="group theme-card p-6 md:p-8 transition-all duration-200">
+      {/* Top Controls Header */}
+      <div className="flex items-center justify-between pb-4 mb-6 border-b border-theme">
+        <div className="flex items-center gap-4">
+          <span className="ayah-number font-bold text-xs">
+            {verse.verse_key}
+          </span>
+          <button
             onClick={() => onPlay(verse.verse_key)}
-          />
-
+            className="theme-icon-button theme-icon-button-sm text-subtle hover:!text-accent"
+            aria-label={`Play recitation of verse ${verse.verse_key}`}
+            title="Play Ayah"
+          >
+            <RiPlayFill size={18} />
+          </button>
           <BookmarkButton
             verse={verse}
             translationId={translationId}
@@ -38,48 +50,56 @@ const VerseCard = ({ verse, translationId, isBookmarked, onBookmarkToggle, onPla
           />
         </div>
 
-        <div className="flex items-center gap-6 text-gray-400 opacity-40 group-hover:opacity-100 transition-all">
-          <button onClick={handleCopy}>
-            {copied
-              ? <RiCheckLine size={20} className="text-green-500" />
-              : <RiFileCopyLine size={20} className="cursor-pointer hover:text-[#2ca4ab] transition-colors" />
-            }
-          </button>
-        </div>
+        <button
+          onClick={handleCopy}
+          className="theme-icon-button theme-icon-button-sm text-subtle hover:!text-accent"
+          aria-label="Copy verse"
+          title="Copy Ayah"
+        >
+          {copied ? (
+            <RiCheckLine size={18} className="text-[var(--success)]" />
+          ) : (
+            <RiFileCopyLine size={18} />
+          )}
+        </button>
       </div>
 
-      {/* Arabic text */}
-      <div className="text-right mb-12">
-        <p className="text-4xl md:text-[44px] leading-[2.6] text-gray-900 font-serif rtl">
+      {/* Arabic Script */}
+      <div className="text-right my-6">
+        <p className="font-quran leading-[2.4] select-text">
           {verse.text_uthmani}
         </p>
       </div>
 
-      {/* Translation */}
-      <div className="text-left mb-10 font-sans">
-        <p className="text-[19px] md:text-[21px] text-[#1f2124] leading-relaxed">
-          <span dangerouslySetInnerHTML={{ __html: verse.translations?.[0]?.text }} />
+      {/* English / Selected Translation */}
+      <div className="text-left my-6">
+        <p className="translation-text text-base md:text-lg leading-relaxed theme-secondary select-text">
+          <span
+            dangerouslySetInnerHTML={{ __html: verse.translations?.[0]?.text }}
+          />
         </p>
       </div>
 
-      {/* Bottom action buttons */}
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-[13px] font-bold text-gray-400">
+      {/* Footer Drawers Trigger Bar */}
+      <div className="flex flex-wrap items-center gap-4 pt-4 border-t border-theme text-xs font-bold theme-muted">
         <button
           onClick={() => onTafsir(verse)}
-          className="flex items-center gap-2 hover:text-[#2ca4ab] transition-colors"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-theme-soft hover:theme-accent transition-colors"
         >
-          <RiBook2Line size={18} /> Tafsirs
+          <RiBook2Line size={16} />
+          <span>Tafsirs</span>
         </button>
-        
-<button
-  onClick={() => onHadith(verse)}  
-  className="flex items-center gap-2 hover:text-[#2ca4ab] transition-colors"
->
-  <RiHistoryLine size={18} /> Hadith
-</button>
+
+        <button
+          onClick={() => onHadith(verse)}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-theme-soft hover:theme-accent transition-colors"
+        >
+          <RiHistoryLine size={16} />
+          <span>Hadith</span>
+        </button>
       </div>
-    </div>
-  );h
+    </article>
+  );
 };
 
 export default VerseCard;

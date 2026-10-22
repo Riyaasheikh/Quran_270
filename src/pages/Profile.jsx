@@ -1,128 +1,181 @@
 import React, { useContext } from 'react';
 import { AuthContext } from "../context/AuthContext";
+import { Link } from 'react-router-dom';
 import { 
   RiUserLine, 
   RiMailLine, 
   RiShieldCheckLine, 
   RiTimeLine,
-  RiLoader4Line 
+  RiLoader4Line,
+  RiCompass3Line
 } from "@remixicon/react";
 
 const Profile = () => {
   const { user, loading } = useContext(AuthContext);
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#fcfaf7] flex flex-col items-center justify-center">
-        <RiLoader4Line className="w-10 h-10 text-[#8c7355] animate-spin mb-4" />
-        <p className="text-[#8c7355] font-black uppercase tracking-[0.3em] text-[10px]">
-          Synchronizing Profile
+      <div className="theme-page min-h-screen flex flex-col items-center justify-center gap-3">
+        <RiLoader4Line className="w-10 h-10 theme-accent animate-spin" />
+        <p className="theme-subtle font-bold uppercase tracking-[0.25em] text-[11px]">
+          Synchronizing Sanctuary Profile
         </p>
       </div>
     );
   }
+
   if (!user) {
     return (
-      <div className="min-h-screen bg-[#fcfaf7] flex items-center justify-center">
-        <div className="text-center p-8 bg-white border border-[#e8e1d5] rounded-3xl shadow-sm">
-          <RiShieldCheckLine className="mx-auto text-red-400 mb-4" size={40} />
-          <p className="text-gray-800 font-bold mb-2">Access Denied</p>
-          <p className="text-gray-500 text-sm">Please log in to view your profile details.</p>
+      <div className="theme-page min-h-screen flex items-center justify-center p-4">
+        <div className="theme-card max-w-sm w-full p-8 text-center">
+          <div className="w-14 h-14 rounded-2xl bg-accent-soft text-accent flex items-center justify-center mx-auto mb-4">
+            <RiShieldCheckLine size={28} />
+          </div>
+          <h2 className="text-xl font-bold theme-text mb-2">Access Restricted</h2>
+          <p className="theme-muted text-sm leading-relaxed mb-6">
+            Please authenticate to view your personalized profile, notes, and reading history.
+          </p>
+          <Link to="/login" className="theme-button w-full">
+            Sign In Now
+          </Link>
         </div>
       </div>
     );
   }
 
+  const creationDate = user.created_at
+    ? new Date(user.created_at).toLocaleDateString('en-US', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      })
+    : 'Active Member';
+
   return (
-    <div className="min-h-screen bg-[#fcfaf7] py-12 px-4">
-      <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="theme-page min-h-screen py-12 px-4 sm:px-6 theme-transition safe-area-top safe-area-bottom">
+      <div className="max-w-4xl mx-auto">
+        
+        {/* Section Header */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-6xl font-black text-[#8c7355] tracking-tighter uppercase mb-3">
-            My Profile
-          </h1>
-          <div className="flex justify-center items-center gap-4 opacity-30">
-            <div className="h-[1px] w-16 bg-[#8c7355]"></div>
-            <RiUserLine size={20} className="text-[#8c7355]" />
-            <div className="h-[1px] w-16 bg-[#8c7355]"></div>
+          <div className="inline-flex items-center gap-1.5 theme-badge theme-badge-gold uppercase tracking-[0.2em] text-[10px] font-bold mb-3">
+            
+            <span>Account Overview</span>
           </div>
+          <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight theme-text">
+            My Sanctuary Profile
+          </h1>
+          <p className="theme-muted text-sm mt-2">
+            Manage your personal settings and reading preferences
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 items-start">
+          
+          {/* Identity Column */}
           <div className="md:col-span-1">
-            <div className="bg-white border-[1.5px] border-[#e8e1d5] rounded-[2.5rem] p-8 shadow-[0_12px_0_0_#e8e1d5] flex flex-col items-center transition-transform hover:scale-[1.02]">
-              <div className="w-28 h-28 bg-[#fcfaf7] rounded-full border-2 border-[#8c7355] flex items-center justify-center mb-6 overflow-hidden shadow-inner p-1">
-                {user.avatar || user.google_avatar ? (
-                  <img 
-                    src={user.avatar || user.google_avatar} 
-                    alt="User Avatar" 
-                    className="w-full h-full object-cover rounded-full" 
-                  />
-                ) : (
-                  <RiUserLine size={48} className="text-[#8c7355] opacity-50" />
-                )}
+            <div className="theme-card p-8 flex flex-col items-center text-center">
+              <div className="relative mb-6">
+                <div className="w-28 h-28 rounded-full border-2 border-accent/40 bg-theme-soft p-1 flex items-center justify-center overflow-hidden shadow-inner">
+                  {user.avatar || user.google_avatar ? (
+                    <img 
+                      src={user.avatar || user.google_avatar} 
+                      alt={user.name} 
+                      className="w-full h-full object-cover rounded-full" 
+                    />
+                  ) : (
+                    <RiUserLine size={48} className="theme-subtle opacity-70" />
+                  )}
+                </div>
+                <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-accent text-accent-foreground border-2 border-card flex items-center justify-center shadow-sm">
+                  <RiShieldCheckLine size={15} />
+                </div>
               </div>
-              <h2 className="text-2xl font-black text-gray-900 text-center uppercase tracking-tight leading-tight">
+
+              <h2 className="text-xl font-bold theme-text tracking-tight mb-2">
                 {user.name}
               </h2>
-              <p className="text-[10px] font-black text-[#bfa07d] uppercase tracking-[0.25em] mt-2 bg-[#fcfaf7] px-3 py-1 rounded-full">
-                Verified Student
-              </p>
+              <span className="theme-badge theme-badge-accent uppercase tracking-wider text-[10px] font-bold">
+                Quranic Seeker
+              </span>
+
+              <div className="w-full mt-6 pt-6 border-t border-theme">
+                <Link
+                  to="/bookmarks"
+                  className="theme-button-outline w-full !py-2.5 text-xs font-semibold gap-1.5"
+                >
+                  <RiCompass3Line size={15} />
+                  <span>My Saved Verses</span>
+                </Link>
+              </div>
             </div>
           </div>
 
+          {/* Account Detail List */}
           <div className="md:col-span-2 space-y-6">            
-            <div className="bg-white border-[1.5px] border-[#e8e1d5] rounded-[2rem] p-8 shadow-sm">
-              <h3 className="text-[11px] font-black text-[#bfa07d] uppercase tracking-[0.4em] mb-8 flex items-center gap-2">
-                <span className="w-2 h-2 bg-[#8c7355] rounded-full"></span>
-                Account Information
-              </h3>
+            <div className="theme-card p-7 sm:p-8">
+              <div className="flex items-center justify-between pb-6 border-b border-theme mb-6">
+                <h3 className="text-xs font-bold theme-gold uppercase tracking-[0.25em] flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-gold inline-block" />
+                  Account Credentials
+                </h3>
+                <span className="text-[11px] font-semibold theme-badge bg-theme-soft">
+                  Active Session
+                </span>
+              </div>
 
-              <div className="space-y-8">
-                <div className="flex items-center gap-5 group">
-                  <div className="p-3 bg-[#fcfaf7] rounded-2xl text-[#8c7355] transition-colors group-hover:bg-[#8c7355] group-hover:text-white">
-                    <RiMailLine size={24} />
+              <div className="space-y-6">
+                {/* Email Item */}
+                <div className="flex items-start sm:items-center gap-4">
+                  <div className="w-11 h-11 rounded-xl bg-theme-soft border border-theme flex items-center justify-center theme-accent shrink-0">
+                    <RiMailLine size={20} />
                   </div>
-                  <div>
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Primary Email</p>
-                    <p className="font-bold text-gray-800 break-all">{user.email}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-5 group">
-                  <div className="p-3 bg-[#fcfaf7] rounded-2xl text-[#8c7355] transition-colors group-hover:bg-emerald-500 group-hover:text-white">
-                    <RiShieldCheckLine size={24} />
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Security Status</p>
-                    <p className="font-bold text-emerald-600 flex items-center gap-1">
-                      Authenticated via Google
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[11px] font-bold theme-subtle uppercase tracking-wider mb-0.5">
+                      Primary Email
+                    </p>
+                    <p className="font-semibold theme-text text-sm sm:text-base break-all">
+                      {user.email}
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-5 group">
-                  <div className="p-3 bg-[#fcfaf7] rounded-2xl text-[#8c7355] transition-colors group-hover:bg-[#bfa07d] group-hover:text-white">
-                    <RiTimeLine size={24} />
+                {/* Security Verification */}
+                <div className="flex items-start sm:items-center gap-4">
+                  <div className="w-11 h-11 rounded-xl bg-accent-soft border border-transparent flex items-center justify-center theme-accent shrink-0">
+                    <RiShieldCheckLine size={20} />
                   </div>
-                  <div>
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Account Created</p>
-                    <p className="font-bold text-gray-800">
-                      {new Date(user.created_at).toLocaleDateString('en-US', {
-                        day: 'numeric',
-                        month: 'long',
-                        year: 'numeric'
-                      })}
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[11px] font-bold theme-subtle uppercase tracking-wider mb-0.5">
+                      Authentication
+                    </p>
+                    <p className="font-semibold theme-text text-sm flex items-center gap-1.5">
+                      {user.google_id || user.google_avatar ? 'Connected via Google Account' : 'Email & Password Protected'}
                     </p>
                   </div>
                 </div>
 
+                {/* Account Age */}
+                <div className="flex items-start sm:items-center gap-4">
+                  <div className="w-11 h-11 rounded-xl bg-theme-soft border border-theme flex items-center justify-center theme-gold shrink-0">
+                    <RiTimeLine size={20} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[11px] font-bold theme-subtle uppercase tracking-wider mb-0.5">
+                      Member Since
+                    </p>
+                    <p className="font-semibold theme-text text-sm">
+                      {creationDate}
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Subtle Design element */}
-            <div className="p-6 border-t border-[#e8e1d5] text-center">
-               <p className="text-[9px] font-black text-[#bfa07d] uppercase tracking-[0.4em] opacity-50">
-                 Digital Compendium Profile v1.0
-               </p>
+            {/* Subtle Footer Note */}
+            <div className="p-4 border-t border-theme/60 text-center">
+              <p className="text-[10px] font-bold uppercase tracking-[0.3em] theme-subtle">
+                Deen 360 Sanctuary Platform • Safe & Private
+              </p>
             </div>
 
           </div>

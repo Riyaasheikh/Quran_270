@@ -11,10 +11,7 @@ const HadithDrawer = ({ verse, onClose }) => {
   return (
     <>
       <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[150]" onClick={onClose} />
-
       <div className="fixed right-0 top-0 h-full w-full max-w-[520px] bg-white z-[160] shadow-2xl flex flex-col">
-
-        {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <div>
             <h2 className="text-lg font-bold text-gray-900">Hadith References</h2>
@@ -36,7 +33,6 @@ const HadithDrawer = ({ verse, onClose }) => {
 
         <div className="flex-1 flex flex-col items-center justify-center px-6 py-10 text-center gap-5">
           <RiBookOpenLine size={48} className="text-[#2ca4ab] opacity-40" />
-
           <div>
             <p className="text-gray-700 font-semibold text-lg mb-1">
               Search Hadith for this verse
@@ -45,7 +41,6 @@ const HadithDrawer = ({ verse, onClose }) => {
               Find hadith references related to this verse on Sunnah.com — the most comprehensive hadith database.
             </p>
           </div>
-
           <a
             href={searchUrl}
             target="_blank"
@@ -55,11 +50,9 @@ const HadithDrawer = ({ verse, onClose }) => {
             <RiExternalLinkLine size={18} />
             Search on Sunnah.com
           </a>
-
           <p className="text-xs text-gray-300">Opens in a new tab</p>
         </div>
         </div>
-     
     </>
   );
 };
