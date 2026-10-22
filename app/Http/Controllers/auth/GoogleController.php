@@ -24,14 +24,11 @@ class GoogleController extends Controller
             [
                 'name'              => $googleUser->getName(),
                 'google_id'         => $googleUser->getId(),
-                'password'          => bcrypt(Str::random(24)), // random password
+                'password'          => bcrypt(Str::random(24)),
                 'email_verified_at' => now(),
             ]
         );
-
         Auth::login($user);
-
-        // Redirect back to frontend after Google login
         return redirect('http://localhost:5173');
     }
 }

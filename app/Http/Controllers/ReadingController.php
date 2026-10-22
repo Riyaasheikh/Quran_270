@@ -15,9 +15,7 @@ public function lastRead()
 {
     /** @var \App\Models\User $user */
     $user = Auth::user();
-    
     $last = $user->readingSessions()->latest('updated_at')->first();
-    
     return response()->json($last);
 }
 
