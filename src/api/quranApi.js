@@ -67,6 +67,17 @@ export const fetchSpecificVerse = async (verseKey, translationId = "85") => {
   }
 };
 
+export const fetchVersesByPage = async (pageNumber, translationId = "85") => {
+  const response = await quranApi.get(`/verses/by_page/${pageNumber}`, {
+    params: {
+      language: "en",
+      translations: translationId,
+      fields: "text_uthmani,verse_key,chapter_id,juz_number,page_number",
+    },
+  });
+  return response.data.verses;
+};
+
 export const getPageImageUrl = (pageNumber) => {
   const paddedPage = String(pageNumber).padStart(3, '0');
   return `https://static.quran.com/images/pages/mushaf/v2/${paddedPage}.png`; // use paddedPage
@@ -141,12 +152,26 @@ export const fetchChapterReciters = async () => {
 
 export const fetchVerseAudioList = async (reciterId = 7, chapterId) => {
   try {
-    const response = await quranApi.get(`/recitations/${reciterId}/by_chapter/${chapterId}`);
-    return response.data.audio_files;
+    // Quran.com audio files endpoint for a specific chapter and recitation/audio edition
+    const response = await quranApi.get(`/chapter_recitations/${reciterId}/${chapterId}`);
+    if (response.data?.audio_files) {
+      return response.data.audio_files;
+    }
   } catch (error) {
-    console.error("Audio API Error:", error);
-    return []; 
+    console.warn("Chapter recitation endpoint failed, trying alternative audio endpoint:", error);
   }
+
+  try {
+    // Fallback using standard recitation endpoint
+    const response = await quranApi.get(`/recitations/${reciterId}/by_chapter/${chapterId}`);
+    if (response.data?.audio_files) {
+      return response.data.audio_files;
+    }
+  } catch (err) {
+    console.error("Audio API Error:", err);
+  }
+
+  return [];
 };
 
 export default quranApi;

@@ -12,12 +12,13 @@ import {
   RiHeart3Line,
   RiBookOpenLine,
   RiTimeLine,
-  RiVolumeUpLine,
+  RiArrowLeftLine,
 } from "@remixicon/react";
 
 import Navbar from "../components/global/Navbar";
 import Footer from "../components/global/Footer";
 import { DUA_CATEGORIES, DUAS_LIST, DHIKR_ITEMS } from "../data/supplicationsData";
+import { Link } from "react-router-dom";
 
 const Supplications = () => {
   // Navigation Tabs: 'duas' | 'dhikr' | 'tasbih' | 'shukr'
@@ -28,7 +29,8 @@ const Supplications = () => {
   const [duaSearch, setDuaSearch] = useState("");
   const [favorites, setFavorites] = useState(() => {
     try {
-      return JSON.parse(localStorage.getItem("deen360_dua_favs") || "[]");
+      const value = JSON.parse(localStorage.getItem("deen360_dua_favs") || "[]");
+      return Array.isArray(value) ? value : [];
     } catch {
       return [];
     }
@@ -44,7 +46,8 @@ const Supplications = () => {
   // ================= SHUKR JOURNAL STATE =================
   const [shukrEntries, setShukrEntries] = useState(() => {
     try {
-      return JSON.parse(localStorage.getItem("deen360_shukr_journal") || "[]");
+      const value = JSON.parse(localStorage.getItem("deen360_shukr_journal") || "[]");
+      return Array.isArray(value) ? value : [];
     } catch {
       return [];
     }
@@ -69,10 +72,10 @@ const Supplications = () => {
         await navigator.share({ title: dua.title, text: textToShare });
       } catch {
         // Fallback to clipboard
-        navigator.clipboard.writeText(textToShare);
+        await navigator.clipboard?.writeText?.(textToShare);
       }
     } else {
-      navigator.clipboard.writeText(textToShare);
+      await navigator.clipboard?.writeText?.(textToShare);
       setCopiedId(dua.id);
       setTimeout(() => setCopiedId(null), 2000);
     }
@@ -145,6 +148,15 @@ const Supplications = () => {
 
         {/* Hero Banner */}
         <section className="relative overflow-hidden border-b border-theme bg-theme-overlay py-12 px-4 sm:px-6">
+          <div className="mb-6">
+          <Link
+            to="/"
+            className="theme-button-outline !min-h-[2.35rem] !px-4 !rounded-full text-xs inline-flex items-center gap-2"
+          >
+            <RiArrowLeftLine size={16} />
+            <span>Back to Home</span>
+          </Link>
+        </div>
           <div
             className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-48 rounded-full opacity-15 pointer-events-none blur-3xl"
             style={{ background: "var(--gradient-primary)" }}
@@ -163,7 +175,7 @@ const Supplications = () => {
             </p>
 
             {/* Main Tabs Navigation */}
-            <div className="flex flex-wrap items-center justify-center gap-2 mt-8">
+            <div className="mt-7 grid w-full grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-center">
               {[
                 { id: "duas", label: "Dua Library", icon: "🤲" },
                 { id: "dhikr", label: "Daily Dhikr", icon: "📿" },
@@ -173,7 +185,7 @@ const Supplications = () => {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                  className={`flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-xl px-2.5 py-3 text-[11px] font-bold transition-all cursor-pointer sm:px-5 sm:text-xs ${
                     activeTab === tab.id
                       ? "bg-accent text-[var(--accent-foreground)] shadow-md shadow-accent/20"
                       : "theme-button-outline"
@@ -206,7 +218,7 @@ const Supplications = () => {
               </div>
 
               {/* Category Pills List */}
-              <div className="flex items-center gap-2 overflow-x-auto w-full pb-2 scrollbar-none">
+              <div className="flex w-full min-w-0 items-center gap-2 overflow-x-auto overscroll-x-contain pb-2 scrollbar-none">
                 {DUA_CATEGORIES.map((cat) => (
                   <button
                     key={cat.id}
@@ -238,7 +250,7 @@ const Supplications = () => {
                   return (
                     <article
                       key={dua.id}
-                      className="theme-card theme-card-lift p-6 flex flex-col justify-between gap-5 group"
+                      className="theme-card theme-card-lift flex min-w-0 flex-col justify-between gap-4 rounded-2xl p-4 group sm:gap-5 sm:p-6"
                     >
                       {/* Card Header */}
                       <div className="flex items-start justify-between gap-3 border-b border-theme/60 pb-3">
@@ -282,7 +294,7 @@ const Supplications = () => {
                       </div>
 
                       {/* Arabic Typography */}
-                      <p className="font-quran text-2xl sm:text-3xl text-right leading-loose theme-text" dir="rtl">
+                      <p className="font-quran break-words text-right text-2xl leading-[2.1] theme-text sm:text-3xl" dir="rtl">
                         {dua.arabic}
                       </p>
 
@@ -330,7 +342,7 @@ const Supplications = () => {
                     <h3 className="text-base font-bold theme-text">{item.name}</h3>
                   </div>
 
-                  <p className="font-quran text-2xl text-right theme-text my-2" dir="rtl">
+                  <p className="font-quran my-2 break-words text-right text-2xl leading-[2.1] theme-text sm:text-3xl" dir="rtl">
                     {item.arabic}
                   </p>
 
@@ -394,7 +406,7 @@ const Supplications = () => {
               </p>
 
               {/* Target Controller Pills */}
-              <div className="flex items-center gap-2 mb-8 bg-theme-soft p-1 rounded-xl border border-theme">
+              <div className="mb-8 flex w-full max-w-full flex-wrap items-center justify-center gap-1 rounded-xl border border-theme bg-theme-soft p-1">
                 {[33, 99, 100, Infinity].map((target) => (
                   <button
                     key={target}
@@ -416,7 +428,7 @@ const Supplications = () => {
               {/* Big Interactive Tap Counter Disk */}
               <button
                 onClick={handleTasbihTap}
-                className="w-52 h-52 rounded-full border-4 border-accent/30 bg-theme-card flex flex-col items-center justify-center shadow-2xl active:scale-95 transition-all select-none cursor-pointer group hover:border-accent"
+                className="flex h-48 w-48 max-w-full select-none flex-col items-center justify-center rounded-full border-4 border-accent/30 bg-theme-card shadow-2xl transition-all active:scale-95 cursor-pointer group hover:border-accent sm:h-52 sm:w-52"
                 style={{
                   boxShadow: "0 20px 40px -15px color-mix(in srgb, var(--accent) 35%, transparent)",
                 }}
@@ -431,7 +443,7 @@ const Supplications = () => {
               </button>
 
               {/* Completed Rounds Counter */}
-              <div className="flex items-center gap-4 mt-8 pt-4 border-t border-theme w-full justify-around text-xs font-bold theme-muted">
+              <div className="mt-8 flex w-full flex-wrap items-center justify-around gap-4 border-t border-theme pt-4 text-xs font-bold theme-muted">
                 <div>
                   <span className="text-theme-subtle block text-[10px] uppercase">Rounds Finished</span>
                   <span className="text-sm font-extrabold theme-text">{totalRounds}</span>
@@ -453,7 +465,7 @@ const Supplications = () => {
         {activeTab === "shukr" && (
           <main className="max-w-2xl mx-auto px-4 sm:px-6 py-10 animate-in fade-in duration-300">
             {/* Journal Input Box */}
-            <form onSubmit={handleAddShukr} className="theme-card p-6 rounded-2xl mb-8 border border-theme shadow-md">
+            <form onSubmit={handleAddShukr} className="theme-card mb-8 rounded-2xl border border-theme p-4 shadow-md sm:p-6">
               <div className="flex items-center gap-2 mb-3">
                 <RiHeart3Line className="theme-gold" size={20} />
                 <h2 className="text-base font-bold theme-text">

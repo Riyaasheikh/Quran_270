@@ -23,8 +23,12 @@ const Footer = () => {
   const [isThemeModalOpen, setIsThemeModalOpen] = useState(false);
   const [isLangOpen, setIsLangOpen] = useState(false);
 
-  const activeTheme = themes?.find((item) => item.id === theme) || themes?.[0];
-  const activeLang = LANGUAGES.find((l) => l.code === (i18n.language || 'en')) || LANGUAGES[0];
+  const activeTheme =
+    themes?.find((item) => item.id === theme) || themes?.[0];
+
+  const activeLang =
+    LANGUAGES.find((l) => l.code === (i18n.language || "en")) ||
+    LANGUAGES[0];
 
   const popularLinks = [
     { name: "Surah Yaseen", path: "/surah/36", desc: "Heart of Quran" },
@@ -37,7 +41,7 @@ const Footer = () => {
 
   const navLinks = [
     { name: t("nav.home", "Home"), path: "/" },
-    { name: "About Us", path: "/about" },
+    { name: t("nav.about", "About Us"), path: "/about" },
     { name: t("nav.bookmarks", "Bookmarks"), path: "/bookmarks" },
   ];
 
@@ -45,10 +49,12 @@ const Footer = () => {
     <SectionWrapper>
       <footer className="w-full pt-14 md:pt-20 pb-8 theme-text transition-colors duration-300">
         <div className="max-w-[1400px] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-10 lg:gap-12 mb-16 px-4">
-          
           {/* Brand Column */}
           <div className="lg:col-span-5 space-y-6">
-            <Link to="/" className="inline-block transition-transform hover:scale-[1.02]">
+            <Link
+              to="/"
+              className="inline-block transition-transform hover:scale-[1.02]"
+            >
               <span className="text-2xl font-black tracking-[-0.04em] uppercase">
                 <span className="theme-gold">Deen</span>
                 <span className="theme-text ms-1 font-light">360</span>
@@ -56,21 +62,24 @@ const Footer = () => {
             </Link>
 
             <div className="space-y-4 max-w-md">
-              {/* Paragraphs and headings auto-translate into Urdu */}
-      <h3>{tText("Read, Listen, Search, and Reflect")}</h3>
-      <p>{tText("A calm, accessible platform to read, search, and listen to the Holy Quran. Equipped with scholarly translations, tafsir, and word-by-word tools for deep reflection.")}</p>
-      <p>{tText("Architected as a continuous charity (Sadaqah Jariyah), dedicated to connecting hearts with the Divine Revelation.")}</p>
-
-      <span>{tText("Navigate")}</span>
-      <span>{tText("Popular Surahs")}</span>
-      <p>{tText("All Rights Reserved.")}</p>
+              <h3>{tText("Read, Listen, Search, and Reflect")}</h3>
+              <p>
+                {tText(
+                  "A calm, accessible platform to read, search, and listen to the Holy Quran. Equipped with scholarly translations, tafsir, and word-by-word tools for deep reflection."
+                )}
+              </p>
+              <p>
+                {tText(
+                  "Architected as a continuous charity (Sadaqah Jariyah), dedicated to connecting hearts with the Divine Revelation."
+                )}
+              </p>
             </div>
           </div>
 
           {/* Navigation Links */}
           <div className="lg:col-span-3 space-y-6">
             <h4 className="text-xs font-black uppercase tracking-widest theme-gold">
-              Navigate
+              {tText("Navigate")}
             </h4>
             <ul className="space-y-3">
               {navLinks.map((link) => (
@@ -91,7 +100,7 @@ const Footer = () => {
             <div className="flex items-center gap-2 theme-gold">
               <RiFireLine size={18} />
               <h4 className="text-xs font-black uppercase tracking-widest">
-                Popular Surahs
+                {tText("Popular Surahs")}
               </h4>
             </div>
 
@@ -103,10 +112,10 @@ const Footer = () => {
                   className="flex flex-col px-3.5 py-3 rounded-xl border border-theme bg-theme-card hover:border-theme-strong hover:bg-accent-soft transition-all group"
                 >
                   <span className="text-sm font-bold theme-text group-hover:theme-accent transition-colors">
-                    {link.name}
+                    {tText(link.name)}
                   </span>
                   <span className="text-xs theme-muted mt-0.5">
-                    {link.desc}
+                    {tText(link.desc)}
                   </span>
                 </Link>
               ))}
@@ -117,7 +126,6 @@ const Footer = () => {
         {/* Footer Bottom Controls */}
         <div className="max-w-[1400px] mx-auto pt-8 border-t border-theme flex flex-col md:flex-row justify-between items-center gap-6 px-4">
           <div className="flex flex-wrap items-center justify-center gap-3">
-            
             {/* Theme Selector Button */}
             <button
               type="button"
@@ -128,7 +136,9 @@ const Footer = () => {
               <RiPaletteLine size={17} className="theme-gold" />
               <span
                 className="w-2.5 h-2.5 rounded-full"
-                style={{ backgroundColor: activeTheme?.dot || "var(--accent)" }}
+                style={{
+                  backgroundColor: activeTheme?.dot || "var(--accent)",
+                }}
               />
               <span>{activeTheme?.name || "Theme"}</span>
             </button>
@@ -147,7 +157,8 @@ const Footer = () => {
           </div>
 
           <p className="text-xs font-medium theme-muted text-center md:text-end">
-            © 2026 <span className="theme-text font-bold">Deen 360</span>. All Rights Reserved.
+            © 2026 <span className="theme-text font-bold">Deen 360</span>.{" "}
+            {tText("All Rights Reserved.")}
           </p>
         </div>
       </footer>

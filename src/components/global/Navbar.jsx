@@ -11,6 +11,8 @@ import {
   useLocation,
 } from "react-router-dom";
 
+import { useTranslation } from "react-i18next";
+
 import {
   RiGlobalLine,
   RiMenuLine,
@@ -19,196 +21,259 @@ import {
   RiUserLine,
   RiBookmarkLine,
   RiArrowDownSLine,
+  RiCompass3Line,
+  RiMore2Fill,
+  RiUserStarLine,
+  RiBookOpenLine,
+  RiMoonClearLine,
+  RiMapPinLine,
+  RiCalculatorLine,
 } from "@remixicon/react";
 
 import { AuthContext } from "../../context/AuthContext";
 import { fetchChapters } from "../../api/quranApi";
+import { LANGUAGES } from "../../i18n/config";
 
-import LanguageModal from "../../ui/LanguageModal";
+import LanguageSelector from "../global/LanguageSelector";
 import SearchModal from "../../ui/SearchModal";
 import MenuSidebar from "../../ui/MenuSidebar";
+
+const PRIMARY_NAV_ITEMS = [
+  { key: "nav.quran", label: "Quran", path: "/quran" },
+  { key: "nav.quranExplorer", label: "Quran Explorer", path: "/quran-explorer" },
+  { key: "nav.hadith", label: "Hadith", path: "/hadith" },
+  { key: "nav.prayerTimes", label: "Prayer Times", path: "/prayer-times" },
+  { key: "nav.supplications", label: "Supplications", path: "/supplications" },
+];
+
+const MORE_NAV_ITEMS = [
+  {
+    key: "nav.fasting",
+    label: "Fasting",
+    path: "/fasting",
+    icon: RiMoonClearLine,
+  },
+  {
+    key: "mosques.finder",
+    label: "Mosque Finder",
+    path: "/mosques",
+    icon: RiMapPinLine,
+  },
+  {
+    key: "nav.zakat",
+    label: "Zakat Calculator",
+    path: "/zakat",
+    icon: RiCalculatorLine,
+  },
+  {
+    key: "nav.prophets",
+    label: "Prophets Directory",
+    path: "/prophets",
+    icon: RiUserStarLine,
+  },
+  {
+    key: "nav.bookmarks",
+    label: "Bookmarks",
+    path: "/bookmarks",
+    icon: RiBookmarkLine,
+  },
+  {
+    key: "nav.about",
+    label: "About Us",
+    path: "/about",
+    icon: RiBookOpenLine,
+  },
+];
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isLangOpen, setIsLangOpen] = useState(false);
-  const [selectedLang, setSelectedLang] = useState("English");
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [chapters, setChapters] = useState([]);
+  const [isMoreOpen, setIsMoreOpen] = useState(false);
 
-  const { user, logout } = useContext(AuthContext);
+  const [chapters, setChapters] = useState([]);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const { i18n, t } = useTranslation();
+
+  const auth = useContext(AuthContext) || {};
+  const user = auth.user;
+  const logout = auth.logout;
 
   const navigate = useNavigate();
   const location = useLocation();
 
   const profileRef = useRef(null);
+  const moreRef = useRef(null);
 
-  /* -----------------------------------------------------------
-     FETCH CHAPTERS FOR SEARCH
-  ----------------------------------------------------------- */
+  const activeLang =
+    LANGUAGES.find((l) => l.code === (i18n.language || "en")) ||
+    LANGUAGES[0];
 
   useEffect(() => {
-    let mounted = true;
+    let isMounted = true;
 
-    const getChapters = async () => {
+    const loadChapters = async () => {
       try {
         const data = await fetchChapters();
-
-        if (mounted) {
+        if (isMounted) {
           setChapters(Array.isArray(data) ? data : []);
         }
       } catch (error) {
-        console.error(
-          "Failed to fetch chapters for search:",
-          error
-        );
-
-        if (mounted) {
+        console.error("Failed to fetch Quran chapters:", error);
+        if (isMounted) {
           setChapters([]);
         }
       }
     };
 
-    getChapters();
-
+    loadChapters();
     return () => {
-      mounted = false;
+      isMounted = false;
     };
   }, []);
 
-  /* -----------------------------------------------------------
-     CLOSE PROFILE WHEN CLICKING OUTSIDE
-  ----------------------------------------------------------- */
-
+  // Close profile & "More" dropdowns when clicking outside
   useEffect(() => {
-    const handleClickOutside = (event) => {
+    if (!isProfileOpen && !isMoreOpen) return;
+
+    const handlePointerDown = (event) => {
       if (
+        isProfileOpen &&
         profileRef.current &&
         !profileRef.current.contains(event.target)
       ) {
         setIsProfileOpen(false);
       }
+
+      if (
+        isMoreOpen &&
+        moreRef.current &&
+        !moreRef.current.contains(event.target)
+      ) {
+        setIsMoreOpen(false);
+      }
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
-
+    document.addEventListener("pointerdown", handlePointerDown);
     return () => {
-      document.removeEventListener(
-        "mousedown",
-        handleClickOutside
-      );
+      document.removeEventListener("pointerdown", handlePointerDown);
     };
-  }, []);
+  }, [isProfileOpen, isMoreOpen]);
 
-  /* -----------------------------------------------------------
-     PREVENT BODY SCROLL WHEN DRAWERS / MODALS ARE OPEN
-  ----------------------------------------------------------- */
-
+  // Escape key handling
   useEffect(() => {
-    const modalOpen =
+    const hasOpenUI =
       isMenuOpen ||
       isSearchOpen ||
-      isLangOpen;
+      isLangOpen ||
+      isProfileOpen ||
+      isMoreOpen;
 
-    if (modalOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
+    if (!hasOpenUI) return;
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        setIsMenuOpen(false);
+        setIsSearchOpen(false);
+        setIsLangOpen(false);
+        setIsProfileOpen(false);
+        setIsMoreOpen(false);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isMenuOpen, isSearchOpen, isLangOpen, isProfileOpen, isMoreOpen]);
+
+  // Lock background scroll for full overlays / drawer
+  useEffect(() => {
+    const shouldLockScroll = isMenuOpen || isSearchOpen || isLangOpen;
+    if (!shouldLockScroll) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
 
     return () => {
-      document.body.style.overflow = "";
+      document.body.style.overflow = previousOverflow;
     };
-  }, [
-    isMenuOpen,
-    isSearchOpen,
-    isLangOpen,
-  ]);
+  }, [isMenuOpen, isSearchOpen, isLangOpen]);
 
-  /* -----------------------------------------------------------
-     CLOSE NAVIGATION UI ON ROUTE CHANGE
-  ----------------------------------------------------------- */
-
+  // Close menus on route change
   useEffect(() => {
     setIsProfileOpen(false);
+    setIsMoreOpen(false);
     setIsMenuOpen(false);
     setIsSearchOpen(false);
     setIsLangOpen(false);
   }, [location.pathname]);
 
-  /* -----------------------------------------------------------
-     LOGOUT
-  ----------------------------------------------------------- */
-
   const handleLogout = async () => {
+    if (isLoggingOut || typeof logout !== "function") return;
+
     try {
+      setIsLoggingOut(true);
       await logout();
-
       setIsProfileOpen(false);
-
-      navigate("/login");
+      setIsMenuOpen(false);
+      navigate("/login", { replace: true });
     } catch (error) {
       console.error("Logout failed:", error);
+    } finally {
+      setIsLoggingOut(false);
     }
   };
 
-  /* -----------------------------------------------------------
-     ACTIVE ROUTE
-  ----------------------------------------------------------- */
-
   const isActiveRoute = (path) => {
-    if (path === "/") {
-      return location.pathname === "/";
-    }
-
+    if (path === "/") return location.pathname === "/";
     return (
       location.pathname === path ||
       location.pathname.startsWith(`${path}/`)
     );
   };
 
-  /* -----------------------------------------------------------
-     NAVIGATION
-  ----------------------------------------------------------- */
-
-  const navItems = [
-    {
-      label: "Quran",
-      path: "/quran",
-    },
-    {
-      label: "Hadith",
-      path: "/hadith",
-    },
-    {
-      label: "Prayer Times",
-      path: "/prayer-times",
-    },
-    {
-      label: "Supplications",
-      path: "/supplications",
-    },
-  ];
-
-  /* -----------------------------------------------------------
-     USER INITIAL
-  ----------------------------------------------------------- */
+  const isAnyMoreActive = MORE_NAV_ITEMS.some((item) =>
+    isActiveRoute(item.path)
+  );
 
   const userInitial =
-    user?.name?.charAt(0)?.toUpperCase() ||
-    user?.email?.charAt(0)?.toUpperCase() ||
+    user?.name?.trim()?.charAt(0)?.toUpperCase() ||
+    user?.email?.trim()?.charAt(0)?.toUpperCase() ||
     "U";
+
+  const dropdownItemClass = `
+    group
+    flex
+    w-full
+    items-center
+    gap-3
+    rounded-xl
+    px-3
+    py-2.5
+    text-sm
+    font-medium
+    theme-secondary
+    transition-colors
+    duration-200
+    hover:bg-accent-soft
+    hover:theme-accent
+    focus-visible:outline-none
+    focus-visible:ring-2
+    focus-visible:ring-accent
+  `;
 
   return (
     <>
-      {/* =====================================================
-          NAVBAR
-      ===================================================== */}
-
       <nav
+        aria-label="Main navigation"
         className="
-          sticky top-0 z-40 w-full
-          border-b border-theme
+          sticky
+          top-0
+          z-40
+          w-full
+          border-b
+          border-theme
           bg-theme
           theme-transition
         "
@@ -217,20 +282,19 @@ const Navbar = () => {
           className="
             mx-auto
             flex
-            h-[72px]
+            h-[68px]
+            sm:h-[72px]
             w-full
             max-w-7xl
             items-center
             justify-between
+            gap-3
             px-4
             sm:px-6
             lg:px-8
           "
         >
-          {/* =================================================
-              BRAND
-          ================================================= */}
-
+          {/* BRAND */}
           <Link
             to="/"
             aria-label="Deen 360 Home"
@@ -239,8 +303,11 @@ const Navbar = () => {
               flex
               shrink-0
               items-center
-              gap-2
+              gap-1.5
+              rounded-lg
               outline-none
+              focus-visible:ring-2
+              focus-visible:ring-accent
             "
           >
             <div
@@ -257,62 +324,44 @@ const Navbar = () => {
                 sm:text-2xl
               "
             >
-              <span className="theme-gold">
-                Deen
-              </span>
-
-              <span className="theme-text font-light">
-                360
-              </span>
+              <span className="theme-gold">Deen</span>
+              <span className="theme-text font-light">360</span>
             </div>
 
-            {/* Small decorative dot */}
             <span
-              className="
-                mt-[-14px]
-                h-1.5
-                w-1.5
-                rounded-full
-                bg-gold
-                opacity-80
-              "
+              aria-hidden="true"
+              className="mt-[-14px] h-1.5 w-1.5 rounded-full bg-gold opacity-80"
             />
           </Link>
 
-          {/* =================================================
-              DESKTOP NAVIGATION
-          ================================================= */}
-
-          <div
-            className="
-              hidden
-              items-center
-              gap-1
-              lg:flex
-            "
-          >
-            {navItems.map((item) => {
+          {/* DESKTOP NAVIGATION (xl and up so tablet/small laptop never cramp) */}
+          <div className="hidden items-center gap-1 xl:flex">
+            {PRIMARY_NAV_ITEMS.map((item) => {
               const active = isActiveRoute(item.path);
 
               return (
                 <Link
                   key={item.path}
                   to={item.path}
+                  aria-current={active ? "page" : undefined}
                   className={`
                     group
                     relative
                     flex
                     h-10
+                    shrink-0
                     items-center
+                    whitespace-nowrap
                     rounded-xl
-                    px-4
+                    px-3.5
                     text-sm
                     font-medium
                     tracking-[-0.01em]
                     outline-none
                     transition-all
                     duration-200
-
+                    focus-visible:ring-2
+                    focus-visible:ring-accent
                     ${
                       active
                         ? "theme-accent bg-accent-soft"
@@ -320,10 +369,10 @@ const Navbar = () => {
                     }
                   `}
                 >
-                  {item.label}
+                  {t(item.key, item.label)}
 
-                  {/* Active indicator */}
                   <span
+                    aria-hidden="true"
                     className={`
                       absolute
                       bottom-1.5
@@ -334,7 +383,6 @@ const Navbar = () => {
                       bg-accent
                       transition-all
                       duration-300
-
                       ${
                         active
                           ? "w-5 opacity-100"
@@ -345,73 +393,145 @@ const Navbar = () => {
                 </Link>
               );
             })}
+
+            {/* MORE DROPDOWN */}
+            <div ref={moreRef} className="relative shrink-0">
+              <button
+                type="button"
+                aria-expanded={isMoreOpen}
+                aria-haspopup="menu"
+                onClick={() => {
+                  setIsProfileOpen(false);
+                  setIsMoreOpen((prev) => !prev);
+                }}
+                className={`
+                  flex
+                  h-10
+                  items-center
+                  gap-1.5
+                  whitespace-nowrap
+                  rounded-xl
+                  px-3.5
+                  text-sm
+                  font-medium
+                  outline-none
+                  transition-all
+                  duration-200
+                  cursor-pointer
+                  focus-visible:ring-2
+                  focus-visible:ring-accent
+                  ${
+                    isAnyMoreActive || isMoreOpen
+                      ? "theme-accent bg-accent-soft"
+                      : "theme-secondary hover:bg-theme-card hover:theme-text"
+                  }
+                `}
+              >
+                <span>{t("nav.more", "More")}</span>
+                <RiArrowDownSLine
+                  size={16}
+                  className={`transition-transform duration-200 ${
+                    isMoreOpen ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+
+              {isMoreOpen && (
+                <div
+                  role="menu"
+                  aria-label="More navigation links"
+                  className="
+                    absolute
+                    end-0
+                    top-[calc(100%+10px)]
+                    z-[280]
+                    w-[240px]
+                    overflow-hidden
+                    rounded-2xl
+                    border
+                    border-theme
+                    bg-theme-card
+                    p-2
+                    shadow-2xl
+                    theme-transition
+                  "
+                >
+                  {MORE_NAV_ITEMS.map((item) => {
+                    const Icon = item.icon;
+                    const active = isActiveRoute(item.path);
+
+                    return (
+                      <Link
+                        key={item.path}
+                        to={item.path}
+                        role="menuitem"
+                        aria-current={active ? "page" : undefined}
+                        onClick={() => setIsMoreOpen(false)}
+                        className={`${dropdownItemClass} ${
+                          active ? "bg-accent-soft theme-accent" : ""
+                        }`}
+                      >
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-theme-elevated">
+                          <Icon size={16} className="theme-accent" />
+                        </span>
+                        <span>{t(item.key, item.label)}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* =================================================
-              RIGHT ACTIONS
-          ================================================= */}
-
-          <div
-            className="
-              flex
-              items-center
-              gap-1
-              sm:gap-1.5
-            "
-          >
-            {/* -----------------------------------------------
-                SEARCH
-            ----------------------------------------------- */}
-
+          {/* RIGHT ACTIONS */}
+          <div className="flex shrink-0 items-center gap-1 sm:gap-1.5">
+            {/* SEARCH */}
             <button
               type="button"
-              aria-label="Search Quran"
+              aria-label={t("nav.searchQuran", "Search Quran")}
               aria-haspopup="dialog"
-              onClick={() => setIsSearchOpen(true)}
-              className="
-                theme-icon-button
-                theme-transition
-              "
+              aria-expanded={isSearchOpen}
+              onClick={() => {
+                setIsProfileOpen(false);
+                setIsMoreOpen(false);
+                setIsLangOpen(false);
+                setIsSearchOpen(true);
+              }}
+              className="theme-icon-button theme-transition"
             >
               <RiSearchLine size={19} />
             </button>
 
-            {/* -----------------------------------------------
-                LANGUAGE
-            ----------------------------------------------- */}
-
+            {/* LANGUAGE */}
             <button
               type="button"
-              aria-label="Change language"
+              aria-label={t("nav.changeLanguage", "Change language")}
+              title={activeLang?.native || activeLang?.name || "Language"}
               aria-haspopup="dialog"
-              onClick={() => setIsLangOpen(true)}
-              className="
-                theme-icon-button
-                theme-transition
-              "
+              aria-expanded={isLangOpen}
+              onClick={() => {
+                setIsProfileOpen(false);
+                setIsMoreOpen(false);
+                setIsSearchOpen(false);
+                setIsLangOpen(true);
+              }}
+              className="theme-icon-button theme-transition"
             >
               <RiGlobalLine size={19} />
             </button>
 
-            {/* -----------------------------------------------
-                PROFILE
-            ----------------------------------------------- */}
-
+            {/* AUTHENTICATED USER OR SIGN IN */}
             {user ? (
-              <div
-                ref={profileRef}
-                className="
-                  relative
-                  ml-1
-                "
-              >
+              <div ref={profileRef} className="relative ms-1">
                 <button
                   type="button"
-                  aria-label="Open profile menu"
+                  aria-label={t("nav.openProfileMenu", "Open profile menu")}
+                  aria-haspopup="menu"
                   aria-expanded={isProfileOpen}
-                  onClick={() =>
-                    setIsProfileOpen((current) => !current)
-                  }
+                  onClick={() => {
+                    setIsMoreOpen(false);
+                    setIsProfileOpen((current) => !current);
+                  }}
                   className="
                     group
                     flex
@@ -422,18 +542,20 @@ const Navbar = () => {
                     border-theme
                     bg-theme-card
                     p-1
-                    pr-2
+                    pe-2.5
                     shadow-sm
                     outline-none
                     transition-all
                     duration-200
                     hover:border-theme-strong
                     hover:bg-theme-elevated
-                    sm:pr-3
+                    focus-visible:ring-2
+                    focus-visible:ring-accent
+                    sm:pe-3
                   "
                 >
-                  {/* Avatar */}
                   <span
+                    aria-hidden="true"
                     className="
                       flex
                       h-8
@@ -446,56 +568,31 @@ const Navbar = () => {
                       text-xs
                       font-bold
                     "
-                    style={{
-                      color: "var(--accent-foreground)",
-                    }}
+                    style={{ color: "var(--accent-foreground)" }}
                   >
                     {userInitial}
                   </span>
 
-                  {/* Name */}
-                  <span
-                    className="
-                      hidden
-                      max-w-[90px]
-                      truncate
-                      text-xs
-                      font-semibold
-                      theme-text
-                      md:block
-                    "
-                  >
-                    {user?.name?.split(" ")[0] ||
-                      "Account"}
+                  <span className="hidden max-w-[90px] truncate text-xs font-semibold theme-text md:block">
+                    {user?.name?.split(" ")[0] || t("nav.account", "Account")}
                   </span>
 
                   <RiArrowDownSLine
+                    aria-hidden="true"
                     size={15}
-                    className={`
-                      hidden
-                      theme-muted
-                      transition-transform
-                      duration-200
-                      md:block
-
-                      ${
-                        isProfileOpen
-                          ? "rotate-180"
-                          : ""
-                      }
-                    `}
+                    className={`hidden theme-muted transition-transform duration-200 md:block ${
+                      isProfileOpen ? "rotate-180" : ""
+                    }`}
                   />
                 </button>
 
-                {/* =========================================
-                    PROFILE DROPDOWN
-                ========================================= */}
-
                 {isProfileOpen && (
                   <div
+                    role="menu"
+                    aria-label="Account menu"
                     className="
                       absolute
-                      right-0
+                      end-0
                       top-[calc(100%+10px)]
                       z-[300]
                       w-[270px]
@@ -508,17 +605,10 @@ const Navbar = () => {
                       theme-transition
                     "
                   >
-                    {/* Account Header */}
-                    <div
-                      className="
-                        border-b
-                        border-theme
-                        bg-theme-elevated
-                        p-4
-                      "
-                    >
+                    <div className="border-b border-theme bg-theme-elevated p-4">
                       <div className="flex items-center gap-3">
                         <div
+                          aria-hidden="true"
                           className="
                             flex
                             h-10
@@ -531,134 +621,70 @@ const Navbar = () => {
                             text-sm
                             font-bold
                           "
-                          style={{
-                            color:
-                              "var(--accent-foreground)",
-                          }}
+                          style={{ color: "var(--accent-foreground)" }}
                         >
                           {userInitial}
                         </div>
 
                         <div className="min-w-0">
-                          <h3
-                            className="
-                              truncate
-                              text-sm
-                              font-bold
-                              theme-text
-                            "
-                          >
-                            {user?.name ||
-                              "Deen 360 User"}
+                          <h3 className="truncate text-sm font-bold theme-text">
+                            {user?.name || "Deen 360 User"}
                           </h3>
-
-                          <p
-                            className="
-                              mt-0.5
-                              truncate
-                              text-xs
-                              theme-muted
-                            "
-                          >
-                            {user?.email}
+                          <p className="mt-0.5 truncate text-xs theme-muted">
+                            {user?.email || ""}
                           </p>
                         </div>
                       </div>
                     </div>
 
-                    {/* Menu */}
                     <div className="space-y-1 p-2">
                       <Link
                         to="/profile"
-                        className="
-                          group
-                          flex
-                          items-center
-                          gap-3
-                          rounded-xl
-                          px-3
-                          py-2.5
-                          text-sm
-                          font-medium
-                          theme-secondary
-                          transition-colors
-                          hover:bg-accent-soft
-                          hover:theme-accent
-                        "
+                        role="menuitem"
+                        onClick={() => setIsProfileOpen(false)}
+                        className={dropdownItemClass}
                       >
-                        <span
-                          className="
-                            flex
-                            h-8
-                            w-8
-                            items-center
-                            justify-center
-                            rounded-lg
-                            bg-theme-elevated
-                            transition-colors
-                            group-hover:bg-accent-soft
-                          "
-                        >
-                          <RiUserLine
-                            size={16}
-                            className="theme-accent"
-                          />
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-theme-elevated">
+                          <RiUserLine size={16} className="theme-accent" />
                         </span>
+                        <span>{t("nav.myProfile", "My Profile")}</span>
+                      </Link>
 
-                        <span>My Profile</span>
+                      <Link
+                        to="/explorer"
+                        role="menuitem"
+                        aria-current={
+                          isActiveRoute("/explorer") ? "page" : undefined
+                        }
+                        onClick={() => setIsProfileOpen(false)}
+                        className={dropdownItemClass}
+                      >
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-theme-elevated">
+                          <RiCompass3Line size={16} className="theme-accent" />
+                        </span>
+                        <span>
+                          {t("nav.thematicExplorer", "Thematic Explorer")}
+                        </span>
                       </Link>
 
                       <Link
                         to="/bookmarks"
-                        className="
-                          group
-                          flex
-                          items-center
-                          gap-3
-                          rounded-xl
-                          px-3
-                          py-2.5
-                          text-sm
-                          font-medium
-                          theme-secondary
-                          transition-colors
-                          hover:bg-accent-soft
-                          hover:theme-accent
-                        "
+                        role="menuitem"
+                        onClick={() => setIsProfileOpen(false)}
+                        className={dropdownItemClass}
                       >
-                        <span
-                          className="
-                            flex
-                            h-8
-                            w-8
-                            items-center
-                            justify-center
-                            rounded-lg
-                            bg-theme-elevated
-                            transition-colors
-                            group-hover:bg-accent-soft
-                          "
-                        >
-                          <RiBookmarkLine
-                            size={16}
-                            className="theme-accent"
-                          />
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-theme-elevated">
+                          <RiBookmarkLine size={16} className="theme-accent" />
                         </span>
-
-                        <span>Bookmarks</span>
+                        <span>{t("nav.bookmarks", "Bookmarks")}</span>
                       </Link>
                     </div>
 
-                    {/* Logout */}
-                    <div
-                      className="
-                        border-t
-                        border-theme
-                        p-2
-                      "
-                    >
+                    <div className="border-t border-theme p-2">
                       <button
                         type="button"
+                        role="menuitem"
+                        disabled={isLoggingOut}
                         onClick={handleLogout}
                         className="
                           group
@@ -674,67 +700,58 @@ const Navbar = () => {
                           text-red-500
                           transition-colors
                           hover:bg-red-500/10
+                          disabled:cursor-not-allowed
+                          disabled:opacity-50
                         "
                       >
-                        <span
-                          className="
-                            flex
-                            h-8
-                            w-8
-                            items-center
-                            justify-center
-                            rounded-lg
-                            bg-red-500/10
-                          "
-                        >
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-red-500/10">
                           <RiLogoutBoxLine size={16} />
                         </span>
-
-                        <span>Logout</span>
+                        <span>
+                          {isLoggingOut
+                            ? t("nav.loggingOut", "Logging out...")
+                            : t("nav.logout", "Logout")}
+                        </span>
                       </button>
                     </div>
                   </div>
                 )}
               </div>
             ) : (
-              /* ---------------------------------------------
-                 SIGN IN
-              --------------------------------------------- */
-
               <Link
                 to="/login"
-                className="ml-1"
+                className="
+                  theme-button-gold
+                  ms-1
+                  inline-flex
+                  h-9
+                  sm:h-10
+                  shrink-0
+                  whitespace-nowrap
+                  items-center
+                  justify-center
+                  rounded-full
+                  px-3.5
+                  text-xs
+                  sm:px-5
+                  sm:text-sm
+                "
               >
-                <button
-                  type="button"
-                  className="
-                    theme-button-gold
-                    h-10
-                    rounded-full
-                    px-4
-                    text-xs
-                    sm:px-5
-                    sm:text-sm
-                  "
-                >
-                  Sign In
-                </button>
+                {t("nav.signIn", "Sign In")}
               </Link>
             )}
 
-            {/* -----------------------------------------------
-                MOBILE MENU
-            ----------------------------------------------- */}
-
+            {/* MENU DRAWER BUTTON (shown below xl so mobile & tablet get the full drawer) */}
             <button
               type="button"
-              aria-label="Open navigation menu"
-              onClick={() => setIsMenuOpen(true)}
-              className="
-                theme-icon-button
-                ml-0.5
-                lg:hidden
-              "
+              aria-label={t("nav.openMenu", "Open navigation menu")}
+              aria-expanded={isMenuOpen}
+              onClick={() => {
+                setIsProfileOpen(false);
+                setIsMoreOpen(false);
+                setIsMenuOpen(true);
+              }}
+              className="theme-icon-button ms-0.5 xl:hidden"
             >
               <RiMenuLine size={21} />
             </button>
@@ -742,10 +759,7 @@ const Navbar = () => {
         </div>
       </nav>
 
-      {/* =====================================================
-          MOBILE SIDEBAR
-      ===================================================== */}
-
+      {/* DRAWER & MODALS */}
       <MenuSidebar
         isOpen={isMenuOpen}
         onClose={() => setIsMenuOpen(false)}
@@ -753,25 +767,15 @@ const Navbar = () => {
         onLogout={handleLogout}
       />
 
-      {/* =====================================================
-          SEARCH MODAL
-      ===================================================== */}
-
       <SearchModal
         isOpen={isSearchOpen}
         onClose={() => setIsSearchOpen(false)}
         allChapters={chapters}
       />
 
-      {/* =====================================================
-          LANGUAGE MODAL
-      ===================================================== */}
-
-      <LanguageModal
+      <LanguageSelector
         isOpen={isLangOpen}
         onClose={() => setIsLangOpen(false)}
-        currentLang={selectedLang}
-        onSelectLang={setSelectedLang}
       />
     </>
   );

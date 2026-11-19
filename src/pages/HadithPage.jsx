@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useContext } from "react";
+import { Link } from "react-router-dom";
 import {
   RiSearchLine,
   RiSparklingFill,
@@ -7,6 +8,9 @@ import {
   RiLoader4Line,
   RiBookmarkFill,
   RiBookmarkLine,
+  RiArrowLeftLine,
+  RiShieldCheckLine,
+  RiErrorWarningLine,
 } from "@remixicon/react";
 
 import Navbar from "../components/global/Navbar";
@@ -45,6 +49,7 @@ const HadithPage = () => {
   const [hadiths, setHadiths] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchError, setSearchError] = useState("");
   const [activeHadith, setActiveHadith] = useState(null);
 
   // Tab mode: 'browse' | 'bookmarks'
@@ -79,6 +84,7 @@ const HadithPage = () => {
     if (viewMode === "bookmarks") return;
     let isMounted = true;
     setLoading(true);
+    setSearchError("");
 
     fetchCollectionBooks(selectedCollection)
       .then((data) => {
@@ -105,6 +111,7 @@ const HadithPage = () => {
     if (viewMode === "bookmarks" || !selectedBook) return;
     let isMounted = true;
     setLoading(true);
+    setSearchError("");
 
     fetchHadithsByBook(selectedCollection, selectedBook)
       .then((data) => {
@@ -125,6 +132,7 @@ const HadithPage = () => {
   const handleSearchSubmit = async (e) => {
     if (e.key === "Enter" || e.type === "click") {
       const q = searchQuery.trim();
+      setSearchError("");
       if (!q) return;
 
       // Case A: Exact Hadith Number Lookup
@@ -134,7 +142,9 @@ const HadithPage = () => {
           const result = await fetchSingleHadith(selectedCollection, Number(q));
           setHadiths([result]);
         } catch {
-          alert(`Hadith #${q} not found in ${HADITH_EDITIONS[selectedCollection].name}`);
+          setSearchError(
+            `Hadith #${q} was not found in ${HADITH_EDITIONS[selectedCollection].name}.`
+          );
         } finally {
           setLoading(false);
         }
@@ -166,17 +176,30 @@ const HadithPage = () => {
     );
   }, [viewMode, savedHadiths, hadiths, searchQuery]);
 
+  const currentEdition = HADITH_EDITIONS[selectedCollection];
+
   return (
     <div className="theme-page min-h-screen theme-transition flex flex-col justify-between">
       <div>
         <Navbar />
 
         {/* Hero Section */}
-        <section className="relative overflow-hidden border-b border-theme bg-theme-overlay py-12 px-4 sm:px-6">
+        <section className="relative overflow-hidden border-b border-theme bg-theme-overlay pt-6 pb-12 px-4 sm:px-6">
           <div
             className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-48 rounded-full opacity-15 pointer-events-none blur-3xl"
             style={{ background: "var(--gradient-gold)" }}
           />
+
+          {/* Top Back Button */}
+          <div className="relative z-10 max-w-7xl mx-auto mb-6">
+            <Link
+              to="/"
+              className="theme-button-outline !min-h-[2.35rem] !px-4 !rounded-full text-xs inline-flex items-center gap-2"
+            >
+              <RiArrowLeftLine size={16} />
+              <span>Back to Home</span>
+            </Link>
+          </div>
 
           <div className="relative z-10 max-w-4xl mx-auto text-center">
             <div className="inline-flex items-center gap-1.5 theme-badge theme-badge-gold uppercase tracking-[0.2em] text-[10px] font-bold mb-3">
@@ -230,6 +253,7 @@ const HadithPage = () => {
                     onClick={() => {
                       setSelectedCollection(col.id);
                       setSearchQuery("");
+                      setSearchError("");
                     }}
                     className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                       selectedCollection === col.id
@@ -247,13 +271,16 @@ const HadithPage = () => {
             <div className="relative max-w-2xl mx-auto mt-6">
               <RiSearchLine
                 size={20}
-                className="absolute ltr:left-4 rtl:right-4 top-1/2 -translate-y-1/2 theme-subtle"
+                className="absolute ltr:left-4 rtl:right-4 top-1/2 -translate-y-1/2 theme-subtle pointer-events-none"
               />
               <input
                 type="text"
-                placeholder='Search keywords in English or Urdu, or type a number & press Enter...'
+                placeholder="Search keywords in English or Urdu, or type a number & press Enter..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  if (searchError) setSearchError("");
+                }}
                 onKeyDown={handleSearchSubmit}
                 className="theme-input !py-3.5 ltr:pl-12 rtl:pr-24 text-sm rounded-2xl shadow-lg border border-theme"
               />
@@ -262,7 +289,11 @@ const HadithPage = () => {
                 {searchQuery && (
                   <button
                     type="button"
-                    onClick={() => setSearchQuery("")}
+                    onClick={() => {
+                      setSearchQuery("");
+                      setSearchError("");
+                    }}
+                    aria-label="Clear search"
                     className="theme-icon-button theme-icon-button-sm mr-1 cursor-pointer"
                   >
                     <RiCloseLine size={16} />
@@ -278,16 +309,30 @@ const HadithPage = () => {
               </div>
             </div>
 
+            {/* Search Error Banner */}
+            {searchError && (
+              <div
+                className="max-w-2xl mx-auto mt-3 px-4 py-2.5 rounded-xl bg-theme-card border border-theme text-xs font-semibold flex items-center justify-center gap-2"
+                style={{ color: "var(--danger)" }}
+              >
+                <RiErrorWarningLine size={16} />
+                <span>{searchError}</span>
+              </div>
+            )}
+
             {/* Quick Topic Pills */}
             {viewMode === "browse" && (
               <div className="flex flex-wrap items-center justify-center gap-1.5 mt-4">
-                <span className="text-[11px] theme-subtle font-medium mr-1">Quick Topics:</span>
+                <span className="text-[11px] theme-subtle font-medium mr-1">
+                  Quick Topics:
+                </span>
                 {POPULAR_SEARCHES.map((topic) => (
                   <button
                     key={topic}
                     type="button"
                     onClick={() => {
                       setSearchQuery(topic);
+                      setSearchError("");
                       const found = Object.entries(books).find(([_, name]) =>
                         name.toLowerCase().includes(topic.toLowerCase())
                       );
@@ -338,6 +383,7 @@ const HadithPage = () => {
                           onClick={() => {
                             setSelectedBook(Number(num));
                             setSearchQuery("");
+                            setSearchError("");
                           }}
                           className={`w-full text-left rtl:text-right p-2.5 rounded-xl text-xs transition-colors flex items-center justify-between cursor-pointer ${
                             isSelected
@@ -360,14 +406,29 @@ const HadithPage = () => {
 
               {/* Hadiths Stream */}
               <div className="lg:col-span-3">
+                {/* Authenticity & Verification Notice */}
+                <div className="bg-gold-soft border border-theme rounded-xl p-3.5 mb-5 flex items-start gap-2.5">
+                  <RiShieldCheckLine
+                    size={18}
+                    className="theme-gold shrink-0 mt-0.5"
+                  />
+                  <div className="text-xs theme-secondary leading-relaxed">
+                    <strong className="theme-text font-bold">
+                      {currentEdition.name} ({currentEdition.authenticityStatus}):{" "}
+                    </strong>
+                    {currentEdition.defaultGrade
+                      ? "All narrations in this collection are universally recognized as Sahih (authentic) by classical Hadith scholarship."
+                      : "This Sunan collection contains Sahih, Hasan, and Da'if narrations. Verify the scholar grading badge on each Hadith before citing."}
+                  </div>
+                </div>
+
                 <div className="flex items-center justify-between pb-4 mb-6 border-b border-theme/60">
                   <div>
                     <h2 className="text-lg font-bold theme-text">
                       Book {selectedBook}: {books[selectedBook] || "Selected Chapter"}
                     </h2>
                     <p className="text-xs theme-muted mt-0.5">
-                      {HADITH_EDITIONS[selectedCollection].name} • Showing{" "}
-                      {displayedHadiths.length} Hadiths
+                      {currentEdition.name} • Showing {displayedHadiths.length} Hadiths
                     </p>
                   </div>
                 </div>
@@ -376,7 +437,7 @@ const HadithPage = () => {
                   <div className="theme-card p-16 flex flex-col items-center justify-center gap-3">
                     <RiLoader4Line size={36} className="theme-accent animate-spin" />
                     <p className="text-xs uppercase tracking-[0.25em] theme-subtle font-bold">
-                      Loading Authentic Arabic, English & Urdu Text...
+                      Loading Authentic Arabic, English &amp; Urdu Text...
                     </p>
                   </div>
                 ) : displayedHadiths.length === 0 ? (
@@ -457,7 +518,9 @@ const HadithPage = () => {
       <HadithDetailDrawer
         hadith={activeHadith}
         onClose={() => setActiveHadith(null)}
-        isBookmarked={activeHadith && savedHadiths.some((item) => item.id === activeHadith.id)}
+        isBookmarked={
+          activeHadith && savedHadiths.some((item) => item.id === activeHadith.id)
+        }
         onToggleBookmark={() => handleBookmarkToggle(activeHadith)}
       />
 

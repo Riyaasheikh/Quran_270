@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
@@ -11,6 +11,14 @@ import {
   RiLogoutBoxLine,
   RiArrowRightSLine,
   RiHome5Line,
+  RiTimeLine,
+  RiHandHeartLine,
+  RiCompass3Line,
+  RiUserStarLine,
+  RiMoonClearLine,
+  RiMapPinLine,
+  RiCalculatorLine,
+  RiUserLine,
 } from "@remixicon/react";
 
 import { useTheme } from "../context/ThemeContext";
@@ -27,31 +35,49 @@ const MenuSidebar = ({ isOpen, onClose, user, onLogout }) => {
 
   const location = useLocation();
 
-  const activeTheme = themes?.find((item) => item.id === theme) || themes?.[0];
-  const activeLang = LANGUAGES.find((l) => l.code === (i18n.language || 'en')) || LANGUAGES[0];
+  const activeTheme =
+    themes?.find((item) => item.id === theme) || themes?.[0];
+  const activeLang =
+    LANGUAGES.find((l) => l.code === (i18n.language || "en")) ||
+    LANGUAGES[0];
 
   useEffect(() => {
-    document.body.style.overflow = isOpen ? "hidden" : "";
+    if (!isOpen) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
     return () => {
-      document.body.style.overflow = "";
+      document.body.style.overflow = previousOverflow;
     };
   }, [isOpen]);
 
   useEffect(() => {
     const handleEscape = (event) => {
       if (event.key === "Escape" && isOpen) {
-        onClose();
+        if (isThemeModalOpen) {
+          setIsThemeModalOpen(false);
+        } else if (isLangOpen) {
+          setIsLangOpen(false);
+        } else {
+          onClose();
+        }
       }
     };
+
     document.addEventListener("keydown", handleEscape);
     return () => document.removeEventListener("keydown", handleEscape);
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, isThemeModalOpen, isLangOpen]);
 
   const isActiveRoute = (path) => {
     if (path === "/") return location.pathname === "/";
-    return location.pathname === path || location.pathname.startsWith(`${path}/`);
+    return (
+      location.pathname === path ||
+      location.pathname.startsWith(`${path}/`)
+    );
   };
 
+  // All links across Navbar & Sidebar in one complete list
   const menuItems = [
     {
       icon: RiHome5Line,
@@ -61,15 +87,85 @@ const MenuSidebar = ({ isOpen, onClose, user, onLogout }) => {
     },
     {
       icon: RiBookOpenLine,
-      label: "About Us",
-      description: "Behind the Deen 360 platform",
-      to: "/about",
+      label: t("nav.quran", "Quran"),
+      description: "Read & listen to all 114 surahs",
+      to: "/quran",
+    },
+    {
+      icon: RiCompass3Line,
+      label: t("nav.quranExplorer", "Quran Explorer"),
+      description: "Explore verses, juz, and surahs",
+      to: "/quran-explorer",
+    },
+    {
+      icon: RiCompass3Line,
+      label: t("nav.thematicExplorer", "Thematic Explorer"),
+      description: "Discover Quranic themes and connections",
+      to: "/explorer",
+    },
+    {
+      icon: RiBookOpenLine,
+      label: t("nav.hadith", "Hadith"),
+      description: "Authentic prophetic traditions",
+      to: "/hadith",
+    },
+    {
+      icon: RiUserStarLine,
+      label: t("nav.prophets", "Prophets Directory"),
+      description: "Prophetic inventory and biographical records",
+      to: "/prophets",
+    },
+    {
+      icon: RiTimeLine,
+      label: t("nav.prayerTimes", "Prayer Times & Qibla"),
+      description: "Daily salah schedule and Qibla direction",
+      to: "/prayer-times",
+    },
+    {
+      icon: RiHandHeartLine,
+      label: t("nav.supplications", "Supplications"),
+      description: "Duas, dhikr, tasbih and gratitude",
+      to: "/supplications",
+    },
+    {
+      icon: RiMoonClearLine,
+      label: t("nav.fasting", "Fasting"),
+      description: "Fasting tracker & schedules",
+      to: "/fasting",
+    },
+    {
+      icon: RiMapPinLine,
+      label: t("mosques.finder", "Mosque Finder"),
+      description: "Locate nearby mosques and prayer spaces",
+      to: "/mosques",
+    },
+    {
+      icon: RiCalculatorLine,
+      label: t("nav.zakat", "Zakat Calculator"),
+      description: "Calculate obligatory zakat easily",
+      to: "/zakat",
     },
     {
       icon: RiBookmarkLine,
       label: t("nav.bookmarks", "Bookmarks"),
       description: "Your saved reflections & verses",
       to: "/bookmarks",
+    },
+    ...(user
+      ? [
+          {
+            icon: RiUserLine,
+            label: t("nav.myProfile", "My Profile"),
+            description: "Account settings & reading progress",
+            to: "/profile",
+          },
+        ]
+      : []),
+    {
+      icon: RiBookOpenLine,
+      label: t("nav.about", "About Us"),
+      description: "Behind the Deen 360 platform",
+      to: "/about",
     },
   ];
 
@@ -89,19 +185,26 @@ const MenuSidebar = ({ isOpen, onClose, user, onLogout }) => {
         onClick={onClose}
       />
 
-      {/* Drawer Container (Adapts position for RTL/LTR automatically) */}
+      {/* Drawer Container */}
       <aside
+        id="deen360-mobile-navigation"
+        role="dialog"
+        aria-modal="true"
         aria-hidden={!isOpen}
         aria-label="Navigation menu"
-        className={`fixed ltr:right-0 rtl:left-0 top-0 z-[120] flex h-dvh w-full max-w-[360px] flex-col overflow-hidden border-x border-theme bg-theme text-theme shadow-2xl theme-transition duration-300 ${
-          isOpen 
-            ? "ltr:translate-x-0 rtl:translate-x-0" 
+        className={`fixed top-0 z-[120] flex h-[100dvh] w-[min(100%,380px)] flex-col overflow-hidden border-x border-theme bg-theme text-theme shadow-2xl theme-transition duration-300 ltr:right-0 rtl:left-0 ${
+          isOpen
+            ? "ltr:translate-x-0 rtl:translate-x-0"
             : "ltr:translate-x-full rtl:-translate-x-full"
         }`}
       >
         {/* Header */}
         <header className="flex shrink-0 items-center justify-between border-b border-theme px-5 py-4">
-          <Link to="/" onClick={onClose} className="group flex items-center gap-1">
+          <Link
+            to="/"
+            onClick={onClose}
+            className="group flex items-center gap-1"
+          >
             <span className="text-xl font-extrabold tracking-[-0.04em] theme-gold">
               Deen
             </span>
@@ -119,19 +222,18 @@ const MenuSidebar = ({ isOpen, onClose, user, onLogout }) => {
                   onLogout();
                   onClose();
                 }}
-                className="flex items-center gap-1.5 rounded-full border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-[11px] font-semibold text-red-500 hover:bg-red-500/20 transition-colors cursor-pointer"
+                className="flex cursor-pointer items-center gap-1.5 rounded-full border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-[11px] font-semibold text-red-500 transition-colors hover:bg-red-500/20"
               >
                 <RiLogoutBoxLine size={14} className="rtl:rotate-180" />
-                <span>Logout</span>
+                <span>{t("nav.logout", "Logout")}</span>
               </button>
             ) : (
-              <Link to="/login" onClick={onClose}>
-                <button
-                  type="button"
-                  className="theme-button-gold rounded-full px-3.5 py-1.5 text-[11px]"
-                >
-                  {t("nav.signIn", "Sign In")}
-                </button>
+              <Link
+                to="/login"
+                onClick={onClose}
+                className="theme-button-gold inline-flex items-center rounded-full px-3.5 py-2 text-[11px] font-semibold"
+              >
+                {t("nav.signIn", "Sign In")}
               </Link>
             )}
 
@@ -150,7 +252,7 @@ const MenuSidebar = ({ isOpen, onClose, user, onLogout }) => {
         {user && (
           <div className="mx-4 mt-4 rounded-2xl border border-theme bg-theme-card p-4 shadow-xs">
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent font-bold text-sm text-[var(--accent-foreground)]">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-bold text-[var(--accent-foreground)]">
                 {userInitial}
               </div>
               <div className="min-w-0 flex-1">
@@ -161,9 +263,7 @@ const MenuSidebar = ({ isOpen, onClose, user, onLogout }) => {
                   {user?.name || user?.email || "Seeker"}
                 </p>
                 {user?.email && (
-                  <p className="truncate text-xs theme-muted">
-                    {user.email}
-                  </p>
+                  <p className="truncate text-xs theme-muted">{user.email}</p>
                 )}
               </div>
             </div>
@@ -171,7 +271,7 @@ const MenuSidebar = ({ isOpen, onClose, user, onLogout }) => {
         )}
 
         {/* Navigation List */}
-        <div className="flex-1 overflow-y-auto px-4 py-5">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
           <p className="mb-2 px-2 text-[10px] font-bold uppercase tracking-[0.18em] theme-subtle">
             Navigation
           </p>
@@ -197,12 +297,20 @@ const MenuSidebar = ({ isOpen, onClose, user, onLogout }) => {
                   >
                     <Icon
                       size={19}
-                      className={active ? "theme-accent" : "theme-muted group-hover:theme-accent"}
+                      className={
+                        active
+                          ? "theme-accent"
+                          : "theme-muted group-hover:theme-accent"
+                      }
                     />
                   </span>
 
                   <span className="min-w-0 flex-1">
-                    <span className={`block text-sm font-semibold ${active ? "theme-accent font-bold" : "theme-text"}`}>
+                    <span
+                      className={`block text-sm font-semibold ${
+                        active ? "theme-accent font-bold" : "theme-text"
+                      }`}
+                    >
                       {item.label}
                     </span>
                     <span className="block truncate text-[11px] theme-muted">
@@ -213,7 +321,9 @@ const MenuSidebar = ({ isOpen, onClose, user, onLogout }) => {
                   <RiArrowRightSLine
                     size={17}
                     className={`theme-muted transition-transform duration-200 rtl:rotate-180 ${
-                      active ? "theme-accent translate-x-0.5 rtl:-translate-x-0.5" : "group-hover:translate-x-0.5 rtl:group-hover:-translate-x-0.5"
+                      active
+                        ? "translate-x-0.5 theme-accent rtl:-translate-x-0.5"
+                        : "group-hover:translate-x-0.5 rtl:group-hover:-translate-x-0.5"
                     }`}
                   />
                 </Link>
@@ -231,55 +341,69 @@ const MenuSidebar = ({ isOpen, onClose, user, onLogout }) => {
             <button
               type="button"
               onClick={() => setIsLangOpen(true)}
-              className="group flex w-full items-center gap-3 rounded-2xl p-3 text-start transition-colors hover:bg-theme-card cursor-pointer"
+              className="group flex w-full cursor-pointer items-center gap-3 rounded-2xl p-3 text-start transition-colors hover:bg-theme-card"
             >
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-theme-elevated">
-                <RiGlobalLine size={19} className="theme-muted group-hover:theme-accent" />
+                <RiGlobalLine
+                  size={19}
+                  className="theme-muted group-hover:theme-accent"
+                />
               </span>
 
-              <span className="flex-1 min-w-0">
+              <span className="min-w-0 flex-1">
                 <span className="block text-sm font-semibold theme-text">
                   Language
                 </span>
-                <span className="block text-[11px] theme-muted truncate">
+                <span className="block truncate text-[11px] theme-muted">
                   {activeLang.native} ({activeLang.name})
                 </span>
               </span>
 
-              <RiArrowRightSLine size={17} className="theme-muted rtl:rotate-180" />
+              <RiArrowRightSLine
+                size={17}
+                className="theme-muted rtl:rotate-180"
+              />
             </button>
 
             {/* Appearance / Theme Button */}
             <button
               type="button"
               onClick={() => setIsThemeModalOpen(true)}
-              className="group flex w-full items-center gap-3 rounded-2xl p-3 text-start transition-colors hover:bg-theme-card cursor-pointer"
+              className="group flex w-full cursor-pointer items-center gap-3 rounded-2xl p-3 text-start transition-colors hover:bg-theme-card"
             >
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-theme-elevated">
-                <RiPaletteLine size={19} className="theme-muted group-hover:theme-accent" />
+                <RiPaletteLine
+                  size={19}
+                  className="theme-muted group-hover:theme-accent"
+                />
               </span>
 
-              <span className="flex-1 min-w-0">
+              <span className="min-w-0 flex-1">
                 <span className="block text-sm font-semibold theme-text">
                   Appearance
                 </span>
                 <span className="flex items-center gap-1.5 text-[11px] theme-muted">
                   <span
                     className="h-2.5 w-2.5 rounded-full border border-theme"
-                    style={{ backgroundColor: activeTheme?.dot || "var(--accent)" }}
+                    style={{
+                      backgroundColor: activeTheme?.dot || "var(--accent)",
+                    }}
                   />
                   <span>{activeTheme?.name || "Current theme"}</span>
                 </span>
               </span>
 
-              <RiArrowRightSLine size={17} className="theme-muted rtl:rotate-180" />
+              <RiArrowRightSLine
+                size={17}
+                className="theme-muted rtl:rotate-180"
+              />
             </button>
           </div>
         </div>
 
         {/* Footer Note */}
         <footer className="shrink-0 border-t border-theme bg-theme-card p-4">
-          <div className="rounded-2xl border border-theme bg-theme-elevated p-3.5 flex items-center gap-3">
+          <div className="flex items-center gap-3 rounded-2xl border border-theme bg-theme-elevated p-3.5">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gold-soft">
               <RiBookOpenLine size={17} className="theme-gold" />
             </div>

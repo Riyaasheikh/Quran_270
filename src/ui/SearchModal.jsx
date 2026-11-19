@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   RiSearchLine, RiMicLine, RiMicFill, RiCloseLine,
   RiBookReadLine, RiFileTextLine, RiLoader4Line,
-  RiFundsLine, RiHistoryLine, RiBookLine, RiFileList3Line
+  RiFundsLine, RiHistoryLine, RiBookLine, RiFileList3Line,
+  RiCompass3Line, RiArrowRightLine
 } from "@remixicon/react";
 
 import {
@@ -13,18 +14,22 @@ import {
   fetchSpecificVerse,
   fetchChapters 
 } from "../api/quranApi";
+import api from "../lib/axios"; // Added for your Laravel thematic API endpoint
 
 const SearchModal = ({ isOpen, onClose, allChapters = [] }) => {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  
+  // Expanded state to include thematic search results
   const [results, setResults] = useState({
-    surahs: [], juz: [], ayahs: [], jump: null,
+    surahs: [], juz: [], ayahs: [], thematic: [], jump: null,
   });
 
-  const popularSearches = ["Al-Mulk", "An-Nisa", "Al-Kahf", "Ya-Sin"];
+  const popularSearches = ["Al-Mulk", "An-Nisa", "Al-Kahf", "Ya-Sin", "Musa"];
   const trySearching = ["Juz 30", "2:255", "Baqarah", "Yusuf"];
+
   const handleVoiceSearch = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) return alert("Voice search not supported.");
@@ -36,51 +41,66 @@ const SearchModal = ({ isOpen, onClose, allChapters = [] }) => {
     recognition.start();
   };
 
-useEffect(() => {
-  if (!query.trim()) {
-    if (results.surahs.length > 0 || results.juz.length > 0 || results.jump || results.ayahs.length > 0) {
-      setResults({ surahs: [], juz: [], ayahs: [], jump: null });
-    }
-    setIsSearching(false);
-    return;
-  }
-
-  const timeoutId = setTimeout(async () => {
-    setIsSearching(true); 
-
-    try {
-      const q = query.toLowerCase().trim();
-      const verseMatch = q.match(/^(\d+)[:\s](\d+)$/);
-      let jumpResult = null;
-      if (verseMatch) {
-        jumpResult = await fetchSpecificVerse(`${verseMatch[1]}:${verseMatch[2]}`);
+  useEffect(() => {
+    if (!query.trim()) {
+      if (results.surahs.length > 0 || results.juz.length > 0 || results.thematic.length > 0 || results.jump || results.ayahs.length > 0) {
+        setResults({ surahs: [], juz: [], ayahs: [], thematic: [], jump: null });
       }
-      const localSurahs = (allChapters || []).filter(s => 
-        s.name_simple.toLowerCase().includes(q) || 
-        s.id.toString() === q
-      ).slice(0, 5);
-
-      const localJuz = getJuzSuggestions(q);
-      let apiAyahs = [];
-      if (q.length > 2 && localSurahs.length === 0 && localJuz.length === 0) {
-        apiAyahs = await searchQuran(q);
-      }
-
-      setResults({
-        surahs: localSurahs,
-        juz: localJuz,
-        ayahs: apiAyahs.slice(0, 5),
-        jump: jumpResult,
-      });
-    } catch (error) {
-      console.error("Search Error:", error);
-    } finally {
       setIsSearching(false);
+      return;
     }
-  }, 350); 
 
-  return () => clearTimeout(timeoutId);
-}, [query]);
+    const timeoutId = setTimeout(async () => {
+      setIsSearching(true); 
+
+      try {
+        const q = query.toLowerCase().trim();
+        const verseMatch = q.match(/^(\d+)[:\s](\d+)$/);
+        let jumpResult = null;
+        
+        if (verseMatch) {
+          jumpResult = await fetchSpecificVerse(`${verseMatch[1]}:${verseMatch[2]}`);
+        }
+
+        const localSurahs = (allChapters || []).filter(s => 
+          s.name_simple.toLowerCase().includes(q) || 
+          s.id.toString() === q
+        ).slice(0, 5);
+
+        const localJuz = getJuzSuggestions(q);
+        
+        let apiAyahs = [];
+        if (q.length > 2 && localSurahs.length === 0 && localJuz.length === 0) {
+          apiAyahs = await searchQuran(q);
+        }
+
+        // Fetch thematic cross-reference connections from your Laravel backend
+        let thematicResults = [];
+        try {
+          const thematicRes = await api.get('/api/quran/search/topics', {
+            params: { q }
+          });
+          thematicResults = thematicRes.data.thematic_results || [];
+        } catch (themeErr) {
+          console.error("Thematic search fetch error:", themeErr);
+        }
+
+        setResults({
+          surahs: localSurahs,
+          juz: localJuz,
+          ayahs: apiAyahs.slice(0, 5),
+          thematic: thematicResults,
+          jump: jumpResult,
+        });
+      } catch (error) {
+        console.error("Search Error:", error);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 350); 
+
+    return () => clearTimeout(timeoutId);
+  }, [query]);
 
   const handleNavigate = (path) => {
     navigate(path);
@@ -90,6 +110,13 @@ useEffect(() => {
 
   if (!isOpen) return null;
 
+  const hasResults = 
+    results.jump || 
+    results.surahs.length > 0 || 
+    results.juz.length > 0 || 
+    results.ayahs.length > 0 || 
+    results.thematic.length > 0;
+
   return (
     <>
       {/* Background Overlay */}
@@ -98,7 +125,7 @@ useEffect(() => {
         onClick={onClose}
       />
 
-      <div className="fixed top-0 right-0 h-full w-full max-w-[350px] z-[150] bg-white flex flex-col shadow-2xl animate-in slide-in-from-right duration-300">
+      <div className="fixed top-0 right-0 h-full w-full max-w-[380px] z-[150] bg-white flex flex-col shadow-2xl animate-in slide-in-from-right duration-300">
         <div className="border-b sticky top-0 bg-white z-10 p-4">
           <div className="flex items-center gap-3 bg-gray-50 px-3 py-1 rounded-xl border border-gray-100 focus-within:border-[#8c7355] focus-within:bg-white transition-all">
             {isSearching ? (
@@ -111,7 +138,7 @@ useEffect(() => {
               type="text" 
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search Quran..." 
+              placeholder="Search Quran or themes (e.g., Musa)..." 
               className="flex-grow py-3 text-[15px] outline-none bg-transparent placeholder:text-gray-400 min-w-0"
             />
             <div className="flex items-center gap-1 shrink-0">
@@ -130,6 +157,8 @@ useEffect(() => {
         <div className="flex-grow overflow-y-auto p-4 custom-scrollbar">
           {query.trim() ? (
             <div className="space-y-6">
+              
+              {/* Exact Verse Jump */}
               {results.jump && (
                 <div>
                   <h4 className="text-[10px] font-black text-[#8c7355] uppercase tracking-[0.2em] mb-3 px-2">Exact Match</h4>
@@ -140,6 +169,43 @@ useEffect(() => {
                 </div>
               )}
 
+              {/* Thematic Storyline Connections (AI Linker Intelligence) */}
+              {results.thematic.length > 0 && (
+                <div>
+                  <h4 className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em] mb-3 px-2 flex items-center gap-1.5">
+                    <RiCompass3Line size={14} /> Thematic Storylines
+                  </h4>
+                  <div className="space-y-3">
+                    {results.thematic.map((topic, idx) => (
+                      <div key={idx} className="p-3.5 bg-emerald-50/60 border border-emerald-100 rounded-2xl">
+                        <h5 className="text-xs font-bold text-emerald-900 mb-2 flex items-center justify-between">
+                          <span>{topic.topic_title}</span>
+                          <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-semibold">
+                            {topic.verse_count} verses
+                          </span>
+                        </h5>
+                        <div className="space-y-2">
+                          {topic.verses.map((v, vIdx) => (
+                            <div 
+                              key={vIdx}
+                              onClick={() => handleNavigate(`/surah/${v.verse_key.replace(':', '/')}`)}
+                              className="bg-white hover:bg-emerald-100/50 p-2 rounded-xl cursor-pointer border border-emerald-100/80 flex items-center justify-between transition-colors"
+                            >
+                              <div>
+                                <span className="text-[11px] font-bold text-emerald-700">Verse {v.verse_key}</span>
+                                <p className="text-[11px] text-gray-600 line-clamp-1">{v.relation_note}</p>
+                              </div>
+                              <RiArrowRightLine className="text-emerald-500 shrink-0 ml-2" size={14} />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Surahs */}
               {results.surahs.length > 0 && (
                 <div>
                   <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3 px-2">Surahs</h4>
@@ -155,6 +221,7 @@ useEffect(() => {
                 </div>
               )}
 
+              {/* Juz */}
               {results.juz.length > 0 && (
                 <div>
                   <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3 px-2">Juz</h4>
@@ -167,6 +234,7 @@ useEffect(() => {
                 </div>
               )}
 
+              {/* Ayahs */}
               {results.ayahs.length > 0 && (
                 <div>
                   <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3 px-2">Verses</h4>
@@ -179,7 +247,8 @@ useEffect(() => {
                 </div>
               )}
 
-              {!isSearching && results.surahs.length === 0 && results.juz.length === 0 && !results.jump && results.ayahs.length === 0 && (
+              {/* Empty state */}
+              {!isSearching && !hasResults && (
                 <div className="text-center py-10">
                   <RiHistoryLine size={32} className="mx-auto text-gray-200 mb-2" />
                   <p className="text-sm text-gray-400">No matches found for "{query}"</p>
