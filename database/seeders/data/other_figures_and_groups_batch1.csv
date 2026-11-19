@@ -1,0 +1,42 @@
+﻿figure_or_group,figure_type,identity_status,principal_anchors,linked_prophets,do_not_assume_or_flags,status
+Maryam,RIGHTEOUS_PERSON,NAMED,3:35-47; 19:16-34; 21:91; 23:50; 66:12; 5:75,Isa; Zakariya,Called 'siddiqa' (5:75). Whether she was a prophet is DISCUSSED (majority: no). 'Sister of Harun' (19:28) DISCUSSED.,CANDIDATE_UNVERIFIED
+Wife of 'Imran (Maryam's mother),RIGHTEOUS_PERSON,UNNAMED,3:35-36,-,Her name is not in the Quran.,CANDIDATE_UNVERIFIED
+Luqman,RIGHTEOUS_PERSON,NAMED,31:12-19,-,Prophethood not stated; majority view: not a prophet (DISCUSSED). Origin not in the Quran.,CANDIDATE_UNVERIFIED
+Dhul-Qarnayn,RIGHTEOUS_RULER,EPITHET_ONLY,18:83-98,-,Identity and prophet status not stated; proposals are historical/tafsir-only; do not assert.,CANDIDATE_UNVERIFIED
+The servant met by Musa ('Khidr'),RIGHTEOUS_PERSON,UNNAMED,18:65-82,Musa,'Khidr' comes from hadith/tafsir; prophet vs saint DISCUSSED.,CANDIDATE_UNVERIFIED
+Talut and Jalut,LEADERS,NAMED,2:246-251,Dawud,Identification with Saul/Goliath is not in the Quran.,CANDIDATE_UNVERIFIED
+The unnamed prophet of Bani Isra'il,PROPHET_UNNAMED,UNNAMED,2:246-247,-,Names in tafsir are TAFSIR-ONLY; do not name.,CANDIDATE_UNVERIFIED
+The passer-by of the ruined town,RIGHTEOUS_PERSON,UNNAMED,2:259,-,'Uzayr' identification is TAFSIR-ONLY and DISPUTED (9:30 is a different context).,CANDIDATE_UNVERIFIED
+The believer from Pharaoh's family,BELIEVER,UNNAMED,40:28-45,Musa,Names in reports are TAFSIR-ONLY.,CANDIDATE_UNVERIFIED
+The man from the city's far end (Ya-Sin),BELIEVER,UNNAMED,36:20-27,-,Name in reports is TAFSIR-ONLY.,CANDIDATE_UNVERIFIED
+The man who warned Musa (28:20),BELIEVER,UNNAMED,28:20-21,Musa,Do not equate with other unnamed men.,CANDIDATE_UNVERIFIED
+"The messengers of Ya-Sin (two, then a third)",MESSENGERS_UNNAMED,UNNAMED,36:13-19,-,Identification as Isa's disciples and the town as Antioch is TAFSIR-ONLY.,CANDIDATE_UNVERIFIED
+People of the Cave,BELIEVERS,UNNAMED,18:9-26,-,"Number and duration DISCUSSED (18:22, 18:25); no names in the Quran.",CANDIDATE_UNVERIFIED
+Owners of the garden,COMMUNITY,UNNAMED,68:17-33,-,A parable-style account; location not stated.,CANDIDATE_UNVERIFIED
+The man with two gardens,PERSON,UNNAMED,18:32-44,-,Parable; do not identify.,CANDIDATE_UNVERIFIED
+Queen of Saba',RULER,UNNAMED,27:22-44; 34:15-21 (the people of Saba'),Sulayman,'Bilqis' is not in the Quran.,CANDIDATE_UNVERIFIED
+Pharaoh (Fir'awn),OPPONENT,TITLE_ONLY,See Musa dataset,Musa; Harun,No personal name or dynasty in the Quran; modern identifications are non-Quranic.,CANDIDATE_UNVERIFIED
+Haman,OPPONENT,NAMED,28:6-8; 28:38; 29:39; 40:24; 40:36-37,Musa,His role is stated only as part of Pharaoh's circle.,CANDIDATE_UNVERIFIED
+Qarun,OPPONENT,NAMED,28:76-82; 29:39; 40:24,Musa,His dealings with Musa beyond the Quran are TAFSIR-ONLY.,CANDIDATE_UNVERIFIED
+The Samiri,OPPONENT,EPITHET_ONLY,20:85-97,Musa; Harun,Identity TAFSIR-ONLY and DISPUTED.,CANDIDATE_UNVERIFIED
+Iblis,ADVERSARY,NAMED,2:34; 7:11-18; 15:28-44; 17:61-65; 18:50; 20:116; 38:71-85,Adam,18:50 says he was 'of the jinn'; the angel/jinn discussion is DISCUSSED.,CANDIDATE_UNVERIFIED
+Harut and Marut,ANGELS,NAMED,2:102,Sulayman,Interpretation of 2:102 is DISPUTED.,CANDIDATE_UNVERIFIED
+Zayd,COMPANION,NAMED,33:37,Muhammad,Only 'Zayd' is named; fuller identification is from sira.,CANDIDATE_UNVERIFIED
+Abu Lahab,OPPONENT,NAMED (kunya),111:1-5,Muhammad,The Quran says 'Abu Lahab' and 'his wife'; further identification is from sira.,CANDIDATE_UNVERIFIED
+People of the Ditch (Ashab al-Ukhdud),COMMUNITY,UNNAMED,85:4-9,-,Event and period not stated; identifications are TAFSIR-ONLY.,CANDIDATE_UNVERIFIED
+Companions of the Elephant,COMMUNITY,UNNAMED,105:1-5,Muhammad,The date relative to the Prophet's birth is from sira.,CANDIDATE_UNVERIFIED
+Ashab al-Rass,COMMUNITY,UNNAMED,25:38; 50:12,-,Identity DISCUSSED.,CANDIDATE_UNVERIFIED
+People of Tubba',COMMUNITY,EPITHET_ONLY,44:37; 50:14,-,Identity DISCUSSED.,CANDIDATE_UNVERIFIED
+People of the Sabbath (Ashab al-Sabt),COMMUNITY,UNNAMED,2:65; 7:163-166; 4:47; 4:154,-,Time and place not stated in the Quran.,CANDIDATE_UNVERIFIED
+The two sons of Adam,PERSONS,UNNAMED,5:27-31,Adam,Habil/Qabil are TAFSIR-ONLY.,CANDIDATE_UNVERIFIED
+Azar,PERSON,NAMED,6:74; 19:41-48; 21:52-70; 26:70-82; 37:83-98; 43:26-28; 60:4,Ibrahim,6:74 'his father Azar'; whether 'ab' means father or uncle is DISCUSSED.,CANDIDATE_UNVERIFIED
+Wives of Nuh and Lut,PERSONS,UNNAMED,66:10,Nuh; Lut,Names in reports are TAFSIR-ONLY.,CANDIDATE_UNVERIFIED
+Wife of Pharaoh,RIGHTEOUS_PERSON,UNNAMED,28:9; 66:11,Musa,'Asiya' is from hadith/tafsir.,CANDIDATE_UNVERIFIED
+Wife of the Aziz and the women of the city,PERSONS,UNNAMED,12:23-34; 12:50-53,Yusuf,'Zulaykha' is not in the Quran.,CANDIDATE_UNVERIFIED
+The king in Yusuf's time,RULER,TITLE_ONLY (al-malik),12:43-101,Yusuf,"The Quran calls him 'al-malik', not Fir'awn; do not equate with Musa's Pharaoh.",CANDIDATE_UNVERIFIED
+The two prison companions,PERSONS,UNNAMED,12:36-42,Yusuf,Names not given.,CANDIDATE_UNVERIFIED
+Yusuf's brothers,COMMUNITY,UNNAMED,12:4-18; 12:58-102,Yusuf; Yaqub,Individual names (including Benjamin) are not given.,CANDIDATE_UNVERIFIED
+'Ad (people of Hud),COMMUNITY,NAMED,7:65-72; 11:50-60; 26:123-140; 46:21-26; 54:18-21; 69:4-8; 89:6-8,Hud,Location and Iram DISCUSSED.,CANDIDATE_UNVERIFIED
+Thamud (people of Salih),COMMUNITY,NAMED,7:73-79; 11:61-68; 26:141-159; 54:23-32; 91:11-15; 15:80-84,Salih,Location DISCUSSED.,CANDIDATE_UNVERIFIED
+Madyan and Ashab al-Ayka,COMMUNITY,NAMED,7:85-93; 11:84-95; 26:176-191; 29:36-37,Shu'ayb,Whether these are one community is DISCUSSED.,CANDIDATE_UNVERIFIED
+Quraysh,COMMUNITY,NAMED,106:1-4,Muhammad,Use only where the verse names them.,CANDIDATE_UNVERIFIED
