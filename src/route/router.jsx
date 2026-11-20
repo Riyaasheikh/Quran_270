@@ -1,4 +1,4 @@
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, Outlet } from "react-router-dom";
 
 // Pages
 import HomePage from "../pages/HomePage";
@@ -21,101 +21,41 @@ import MosqueFinder from "../pages/MosqueFinder";
 import QuranBookReader from "../pages/QuranBookReader";
 import QuranExplorer from "../pages/QuranExplorer";
 import ZakatCalculator from "../pages/ZakatCalculator";
+import GuideChatWidget from "../components/global/GuideChatWidget";
+
+// Global Layout Wrapper so GuideChatWidget works on all routes with useNavigate()
+function AppLayout() {
+  return (
+    <>
+      <Outlet />
+      <GuideChatWidget />
+    </>
+  );
+}
 
 export const router = createBrowserRouter([
-  // Home
   {
-    path: "/",
-    element: <HomePage />,
-  },
-
-  // Quran Shorthand: e.g. /1 or /1/5
-  {
-    path: "/:surahId/:verseNumber?",
-    element: <SurahDetail />,
-  },
-
-  // Quran Explicit: /surah/:surahId/:verseNumber?
-  {
-    path: "/surah/:surahId/:verseNumber?",
-    element: <SurahDetail />,
-  },
-
-  // Juz
-  {
-    path: "/juz/:juzId",
-    element: <JuzDetail />,
-  },
-
-  // Search
-  {
-    path: "/search",
-    element: <SearchResults />,
-  },
-
-  // Bookmarks & Readers
-  {
-    path: "/bookmarks",
-    element: <Bookmarks />,
-  },
-  {
-    path: "/quran",
-    element: <QuranBookReader />,
-  },
-  {
-    path: "/quran-explorer", 
-    element: <QuranExplorer />
-  },
-
-  // Prayer Times & Daily Practice
-  {
-    path: "/prayer-times",
-    element: <PrayerTimes />,
-  },
-  {
-    path: "/hadith",
-    element: <HadithPage />,
-  },
-  {
-    path: "/fasting",
-    element: <FastingHub />,
-  },
-  {
-    path: "/supplications",
-    element: <Supplications />,
-  },
-  { 
-    path: "/mosques", 
-    element: <MosqueFinder /> 
-  },
-
-  // About
-  {
-    path: "/about",
-    element: <AboutUs />,
-  },
-
-  // Authentication
-  {
-    path: "/login",
-    element: <Login />,
-  },
-  {
-    path: "/signup",
-    element: <SignUp />,
-  },
-  {
-    path: "/forgot-password",
-    element: <ForgotPassword />,
-  },
-  {
-    path:'/zakat',
-    element:<ZakatCalculator/>
-  },
-
-  // Profile
-  {
-    path: "/profile",
-    element: <Profile />,
+    element: <AppLayout />,
+    children: [
+      { path: "/", element: <HomePage /> },
+      { path: "/:surahId/:verseNumber?", element: <SurahDetail /> },
+      { path: "/surah/:surahId/:verseNumber?", element: <SurahDetail /> },
+      { path: "/juz/:juzId", element: <JuzDetail /> },
+      { path: "/search", element: <SearchResults /> },
+      { path: "/bookmarks", element: <Bookmarks /> },
+      { path: "/quran", element: <QuranBookReader /> },
+      { path: "/quran-explorer", element: <QuranExplorer /> },
+      { path: "/prayer-times", element: <PrayerTimes /> },
+      { path: "/hadith", element: <HadithPage /> },
+      { path: "/fasting", element: <FastingHub /> },
+      { path: "/supplications", element: <Supplications /> },
+      { path: "/mosques", element: <MosqueFinder /> },
+      { path: "/about", element: <AboutUs /> },
+      { path: "/login", element: <Login /> },
+      { path: "/signup", element: <SignUp /> },
+      { path: "/forgot-password", element: <ForgotPassword /> },
+      { path: "/zakat", element: <ZakatCalculator /> },
+      { path: "/profile", element: <Profile /> },
+    ],
   },
 ]);

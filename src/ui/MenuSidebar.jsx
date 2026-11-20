@@ -109,12 +109,12 @@ const MenuSidebar = ({ isOpen, onClose, user, onLogout }) => {
       description: "Authentic prophetic traditions",
       to: "/hadith",
     },
-    {
-      icon: RiUserStarLine,
-      label: t("nav.prophets", "Prophets Directory"),
-      description: "Prophetic inventory and biographical records",
-      to: "/prophets",
-    },
+    // {
+    //   icon: RiUserStarLine,
+    //   label: t("nav.prophets", "Prophets Directory"),
+    //   description: "Prophetic inventory and biographical records",
+    //   to: "/prophets",
+    // },
     {
       icon: RiTimeLine,
       label: t("nav.prayerTimes", "Prayer Times & Qibla"),

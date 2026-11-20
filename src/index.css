@@ -1,8 +1,11 @@
 @import "tailwindcss";
 
-
 @import url("https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;600;700&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;500;600;700&display=swap");
+
+html:lang(th) body { font-family: 'Noto Sans Thai', system-ui, sans-serif; line-height: 1.75; }
+html:lang(zh) body { font-family: 'Noto Sans SC', system-ui, sans-serif; }
+html:lang(fa) body { font-family: 'Vazirmatn', system-ui, sans-serif; }
 
 @tailwind base;
 @tailwind components;

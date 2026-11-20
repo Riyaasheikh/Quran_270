@@ -65,12 +65,12 @@ const MORE_NAV_ITEMS = [
     path: "/zakat",
     icon: RiCalculatorLine,
   },
-  {
-    key: "nav.prophets",
-    label: "Prophets Directory",
-    path: "/prophets",
-    icon: RiUserStarLine,
-  },
+  // {
+  //   key: "nav.prophets",
+  //   label: "Prophets Directory",
+  //   path: "/prophets",
+  //   icon: RiUserStarLine,
+  // },
   {
     key: "nav.bookmarks",
     label: "Bookmarks",

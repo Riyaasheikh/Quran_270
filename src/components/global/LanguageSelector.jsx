@@ -9,12 +9,12 @@ import {
 import { LANGUAGES } from '../../i18n/config';
 
 const LanguageSelector = ({ isOpen, onClose }) => {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [filter, setFilter] = useState('');
 
   if (!isOpen) return null;
 
-  const currentLang = i18n.language || 'en';
+  const currentLang = i18n.resolvedLanguage || i18n.language || 'en';
 
   const filteredLanguages = LANGUAGES.filter((l) =>
     l.name.toLowerCase().includes(filter.toLowerCase()) ||
@@ -41,8 +41,8 @@ const LanguageSelector = ({ isOpen, onClose }) => {
               <RiTranslate2 size={18} />
             </div>
             <h2 className="text-base font-bold theme-text">
-              Select Language
-            </h2>
+  {t('nav.language')}
+</h2>
           </div>
           <button 
             onClick={onClose} 
