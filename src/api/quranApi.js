@@ -7,6 +7,16 @@ const quranApi = axios.create({
   },
 });
 
+const VERSE_AUDIO_CDN = "https://verses.quran.com/";
+
+const normalizeAudioUrl = (rawUrl) => {
+  if (!rawUrl || typeof rawUrl !== "string") return null;
+  if (rawUrl.startsWith("http://") || rawUrl.startsWith("https://")) {
+    return rawUrl;
+  }
+  return `${VERSE_AUDIO_CDN}${rawUrl.replace(/^\/+/, "")}`;
+};
+
 export const fetchChapters = async () => {
   const response = await quranApi.get("/chapters?language=en");
   return response.data.chapters;
@@ -17,7 +27,7 @@ export const fetchSurahVerses = async (chapterId, translationId = "85") => {
     params: {
       language: "en",
       words: true,
-      translations: translationId, 
+      translations: translationId,
       fields: "text_uthmani,page_number,juz_number",
       per_page: 300,
     },
@@ -34,20 +44,22 @@ export const fetchChapterDetail = async (chapterId) => {
   const response = await quranApi.get(`/chapters/${chapterId}?language=en`);
   return response.data.chapter;
 };
+
 export const fetchVersesByJuz = async (juzId) => {
   const response = await quranApi.get(`/verses/by_juz/${juzId}`, {
     params: {
       language: "en",
-      translations: "85", 
+      translations: "85",
       fields: "text_uthmani,verse_key,chapter_id",
-      per_page: 300, 
+      per_page: 300,
     },
   });
   return response.data.verses;
 };
+
 export const searchQuran = async (query) => {
   const response = await quranApi.get(`/search`, {
-    params: { q: query, language: "en", size:5 },
+    params: { q: query, language: "en", size: 5 },
   });
   return response.data.search.results;
 };
@@ -62,7 +74,7 @@ export const fetchSpecificVerse = async (verseKey, translationId = "85") => {
       },
     });
     return response.data.verse;
-  } catch (error) {
+  } catch {
     return null;
   }
 };
@@ -79,17 +91,15 @@ export const fetchVersesByPage = async (pageNumber, translationId = "85") => {
 };
 
 export const getPageImageUrl = (pageNumber) => {
-  const paddedPage = String(pageNumber).padStart(3, '0');
-  return `https://static.quran.com/images/pages/mushaf/v2/${paddedPage}.png`; // use paddedPage
+  const paddedPage = String(pageNumber).padStart(3, "0");
+  return `https://static.quran.com/images/pages/mushaf/v2/${paddedPage}.png`;
 };
+
 export const getChapterSuggestions = (chapters, query) => {
   if (!query || !Array.isArray(chapters)) return [];
 
   const q = query.toLowerCase().trim();
-  const cleaned = q
-    .replace("surah", "")
-    .replace("surat", "")
-    .trim();
+  const cleaned = q.replace("surah", "").replace("surat", "").trim();
 
   return chapters.filter((c) => {
     return (
@@ -101,77 +111,89 @@ export const getChapterSuggestions = (chapters, query) => {
   });
 };
 
-   export const juzList = Array.from({ length: 30 }, (_, i) => ({
+export const juzList = Array.from({ length: 30 }, (_, i) => ({
   id: i + 1,
   name: `Juz ${i + 1}`,
 }));
- export const getJuzSuggestions = (query) => {
+
+export const getJuzSuggestions = (query) => {
   if (!query) return [];
 
   const q = query.toLowerCase().trim();
-
   const juzNumber = q.match(/\d+/)?.[0];
 
-  if (
-    q.includes("juz") ||
-    q.includes("para") ||
-    q.includes("sipara")
-  ) {
-    return juzList.filter((j) =>
-      j.id.toString().includes(juzNumber || "")
-    );
+  if (q.includes("juz") || q.includes("para") || q.includes("sipara")) {
+    return juzList.filter((j) => j.id.toString().includes(juzNumber || ""));
   }
 
   return [];
 };
+
 export const fetchTafsirForVerse = async (verseKey, tafsirId = 169) => {
   const response = await quranApi.get(`/tafsirs/${tafsirId}/by_ayah/${verseKey}`, {
-    params: { language: 'en' }
+    params: { language: "en" },
   });
-  return response.data.tafsir; 
+  return response.data.tafsir;
 };
 
 export const fetchAvailableTafsirs = async () => {
-  const response = await quranApi.get('/resources/tafsirs', {
-    params: { language: 'en' }
+  const response = await quranApi.get("/resources/tafsirs", {
+    params: { language: "en" },
   });
-  return response.data.tafsirs; 
+  return response.data.tafsirs;
 };
 
 export const fetchChapterReciters = async () => {
   try {
-    const response = await quranApi.get('/resources/chapter_reciters', {
-      params: { language: 'en' }
+    const response = await quranApi.get("/resources/chapter_reciters", {
+      params: { language: "en" },
     });
-    return response.data.reciters;
+    return response.data.reciters || [];
   } catch (error) {
     console.error("Error fetching reciters:", error);
     return [];
   }
 };
 
-export const fetchVerseAudioList = async (reciterId = 7, chapterId) => {
-  try {
-    // Quran.com audio files endpoint for a specific chapter and recitation/audio edition
-    const response = await quranApi.get(`/chapter_recitations/${reciterId}/${chapterId}`);
-    if (response.data?.audio_files) {
-      return response.data.audio_files;
-    }
-  } catch (error) {
-    console.warn("Chapter recitation endpoint failed, trying alternative audio endpoint:", error);
-  }
+/**
+ * Fetches verse-by-verse audio files for a chapter and recitation ID.
+ * Returns normalized items with a playable `url` property.
+ */
+export const fetchVerseAudioList = async (recitationId = 7, chapterId) => {
+  if (!chapterId) return [];
 
   try {
-    // Fallback using standard recitation endpoint
-    const response = await quranApi.get(`/recitations/${reciterId}/by_chapter/${chapterId}`);
-    if (response.data?.audio_files) {
-      return response.data.audio_files;
-    }
+    const response = await quranApi.get(`/recitations/${recitationId}/by_chapter/${chapterId}`, {
+      params: { per_page: 300 },
+    });
+
+    const files = response.data?.audio_files || [];
+    return files
+      .map((item) => {
+        const resolvedUrl = normalizeAudioUrl(item.url || item.audio_url);
+        return resolvedUrl ? { ...item, url: resolvedUrl } : null;
+      })
+      .filter(Boolean);
   } catch (err) {
-    console.error("Audio API Error:", err);
+    console.error("Verse Audio API Error:", err?.response?.status || err.message);
+    return [];
   }
+};
 
-  return [];
+/**
+ * Fetches full-chapter audio URL for a chapter reciter ID.
+ */
+export const fetchFullChapterAudio = async (chapterReciterId = 7, chapterId) => {
+  if (!chapterId) return null;
+
+  try {
+    const response = await quranApi.get(`/chapter_recitations/${chapterReciterId}/${chapterId}`);
+    const audioFile = response.data?.audio_file || response.data?.audio_files?.[0];
+    return normalizeAudioUrl(audioFile?.audio_url || audioFile?.url) || null;
+  } catch (err) {
+    console.error("Chapter Audio API Error:", err?.response?.status || err.message);
+    return null;
+  }
 };
 
 export default quranApi;

@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-
 import {
   RiMicLine,
   RiMicFill,
@@ -17,17 +16,17 @@ import {
   searchQuran,
   fetchSpecificVerse,
 } from "../../api/quranApi";
+import { ThemeContext } from "../../context/ThemeContext";
 
-const SearchBar = ({ allChapters = [] }) => {
+const SearchBar = ({ allChapters = [], onSearch, onInputChange }) => {
+  const { theme } = useContext(ThemeContext);
   const navigate = useNavigate();
   const searchRef = useRef(null);
 
   const [query, setQuery] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
-
   const [isSearching, setIsSearching] = useState(false);
   const [isListening, setIsListening] = useState(false);
-
   const [results, setResults] = useState({
     surahs: [],
     juz: [],
@@ -37,8 +36,7 @@ const SearchBar = ({ allChapters = [] }) => {
 
   const handleVoiceSearch = () => {
     const SpeechRecognition =
-      window.SpeechRecognition ||
-      window.webkitSpeechRecognition;
+      window.SpeechRecognition || window.webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
       alert("Voice search is not supported in this browser.");
@@ -46,410 +44,316 @@ const SearchBar = ({ allChapters = [] }) => {
     }
 
     const recognition = new SpeechRecognition();
-
     recognition.lang = "ar-SA";
     recognition.interimResults = false;
 
-    recognition.onstart = () => {
-      setIsListening(true);
-    };
-
-    recognition.onend = () => {
-      setIsListening(false);
-    };
+    recognition.onstart = () => setIsListening(true);
+    recognition.onend = () => setIsListening(false);
+    recognition.onerror = () => setIsListening(false);
 
     recognition.onresult = (event) => {
-      const transcript =
-        event.results[0][0].transcript;
+      const transcript = event.results?.[0]?.[0]?.transcript || "";
       setQuery(transcript);
+      onInputChange?.(transcript);
       setShowSuggestions(true);
     };
 
     recognition.start();
   };
+
   useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (
-        searchRef.current &&
-        !searchRef.current.contains(e.target)
-      ) {
+    const handleClickOutside = (event) => {
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
         setShowSuggestions(false);
       }
     };
 
-    document.addEventListener(
-      "mousedown",
-      handleClickOutside
-    );
-
-    return () => {
-      document.removeEventListener(
-        "mousedown",
-        handleClickOutside
-      );
-    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
   useEffect(() => {
-    if (!query.trim()) {
-      setResults((prev) => ({
-  ...prev,
-  surahs: [],
-  juz: [],
-  ayahs: [],
-  jump: null,
-}));
+    const trimmed = query.trim();
+    if (!trimmed) {
+      setResults({ surahs: [], juz: [], ayahs: [], jump: null });
       setIsSearching(false);
       return;
     }
+
     const timeoutId = setTimeout(async () => {
       setIsSearching(true);
       try {
-        const q = query.toLowerCase().trim();
-        const verseMatch =
-          q.match(/^(\d+)[:\s](\d+)$/); //12:34
+        const normalized = trimmed.toLowerCase();
+        const verseMatch = normalized.match(/^(\d+)[:\s](\d+)$/);
 
         let jumpResult = null;
-
         if (verseMatch) {
           const verseKey = `${verseMatch[1]}:${verseMatch[2]}`;
+          jumpResult = await fetchSpecificVerse(verseKey);
+        }
 
-          jumpResult =
-            await fetchSpecificVerse(verseKey);
+        let localSurahs = getChapterSuggestions(allChapters, trimmed);
+        if (normalized === "surah" || normalized === "surat") {
+          localSurahs = allChapters.slice(0, 10);
         }
-        let localSurahs =
-          getChapterSuggestions(
-            allChapters,
-            query
-          );
-        if (
-          q === "surah" ||
-          q === "surat"
-        ) {
-          localSurahs =
-            allChapters.slice(0, 10);
-        }
-        const localJuz =
-          getJuzSuggestions(query);
+
+        const localJuz = getJuzSuggestions(trimmed);
         const isNavigationSearch =
-          localSurahs.length > 0 ||
-          localJuz.length > 0 ||
-          jumpResult;
-        let apiAyahs = [];
+          localSurahs.length > 0 || localJuz.length > 0 || Boolean(jumpResult);
 
-        if (
-          !isNavigationSearch &&
-          q.length > 2
-        ) {
-          apiAyahs =
-            await searchQuran(query);
+        let apiAyahs = [];
+        if (!isNavigationSearch && normalized.length > 2) {
+          apiAyahs = await searchQuran(trimmed);
         }
 
         setResults({
           surahs: localSurahs,
           juz: localJuz,
-          ayahs: apiAyahs.slice(0, 5),
+          ayahs: Array.isArray(apiAyahs) ? apiAyahs.slice(0, 5) : [],
           jump: jumpResult,
         });
       } catch (error) {
-        console.error(
-          "Search Error:",
-          error
-        );
+        console.error("Search Error:", error);
       } finally {
         setIsSearching(false);
       }
     }, 350);
 
     return () => clearTimeout(timeoutId);
-  }, [query]);
+  }, [query, allChapters]);
+
+  const handleInputChange = (e) => {
+    const value = e.target.value;
+    setQuery(value);
+    setShowSuggestions(true);
+    onInputChange?.(value);
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!query.trim()) return;
+    setShowSuggestions(false);
+    onSearch?.(query);
+  };
 
   const handleNavigate = (path) => {
     navigate(path);
-
     setShowSuggestions(false);
     setQuery("");
+    onInputChange?.("");
   };
 
+  const handleClear = () => {
+    setQuery("");
+    onInputChange?.("");
+  };
+
+  const hasResults =
+    Boolean(results.jump) ||
+    results.surahs.length > 0 ||
+    results.juz.length > 0 ||
+    results.ayahs.length > 0;
+
   return (
-    <div
-      className="relative w-full z-[9999]"
-      ref={searchRef}
-    >
-
-      <div className="relative group">
-
-        <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none">
+    <div className="relative w-full z-20" ref={searchRef} data-theme={theme}>
+      <form onSubmit={handleSubmit} className="relative group">
+        {/* Left Search / Loading Icon */}
+        <div className="absolute inset-y-0 left-4 sm:left-5 flex items-center pointer-events-none">
           {isSearching ? (
-            <RiLoader4Line
-              className="text-[#C0E2CA] animate-spin"
-              size={20}
-            />
+            <RiLoader4Line className="animate-spin theme-accent" size={20} />
           ) : (
-            <RiSearchLine
-              className="text-gray-400 group-focus-within:text-[#C0E2CA] transition-colors"
-              size={20}
-            />
+            <RiSearchLine size={20} className="theme-muted" />
           )}
         </div>
 
+        {/* Search Input */}
         <input
           type="text"
           value={query}
-          onFocus={() =>
-            setShowSuggestions(true)
-          }
-          onChange={(e) =>
-            setQuery(e.target.value)
-          }
+          onFocus={() => setShowSuggestions(true)}
+          onChange={handleInputChange}
           placeholder={
             isListening
               ? "Listening..."
-              : "Search Surah, Juz, Ayah..."
+              : "Search Surah, Juz, Ayah, or topic..."
           }
-          className={`w-full py-4 md:py-5 pl-14 pr-14 bg-white border-none rounded-full shadow-lg focus:shadow-2xl outline-none text-lg transition-all ${
-            isListening
-              ? "ring-2 ring-[#8c7355]"
-              : ""
+          aria-label="Search Surah, Juz, Ayah, or topic"
+          className={`w-full min-h-[48px] sm:min-h-[56px] py-3.5 sm:py-4 pl-12 sm:pl-14 pr-24 sm:pr-28 rounded-full shadow-lg focus:shadow-xl outline-none text-sm sm:text-base md:text-lg transition-all border bg-theme-input theme-text ${
+            isListening ? "border-gold ring-2 ring-[var(--gold)]" : "border-theme"
           }`}
         />
 
-        <div className="absolute inset-y-0 right-5 flex items-center gap-2">
+        {/* Right Controls: Clear & Voice */}
+        <div className="absolute inset-y-0 right-3 sm:right-4 flex items-center gap-1.5 sm:gap-2">
           {query && (
-            <RiCloseLine
-              size={22}
-              className="text-gray-400 cursor-pointer hover:text-red-500"
-              onClick={() =>
-                setQuery("")
-              }
-            />
+            <button
+              type="button"
+              onClick={handleClear}
+              aria-label="Clear search query"
+              className="p-2 rounded-full transition-colors cursor-pointer theme-muted hover:theme-text"
+            >
+              <RiCloseLine size={20} />
+            </button>
           )}
 
           <button
             type="button"
             onClick={handleVoiceSearch}
-            className={`transition-colors ${
+            aria-label={isListening ? "Stop voice search" : "Start voice search"}
+            className={`p-2 sm:p-2.5 rounded-full transition-all cursor-pointer ${
               isListening
-                ? "text-[#C0E2CA] animate-pulse"
-                : "text-gray-400 rounded-lg bg-[#COE2CA] hover:text-[#8c7355]"
+                ? "bg-accent animate-pulse"
+                : "bg-accent-soft theme-accent hover:scale-105"
             }`}
           >
-            {isListening ? (
-              <RiMicFill size={24}  />
-            ) : (
-              <RiMicLine size={24} />
-            )}
+            {isListening ? <RiMicFill size={20} /> : <RiMicLine size={20} />}
           </button>
         </div>
-      </div>
+      </form>
 
-      {showSuggestions &&
-        (
-          results.jump ||
-          results.surahs.length > 0 ||
-          results.juz.length > 0 ||
-          results.ayahs.length > 0
-        ) && (
-          <div className="absolute top-full  left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden max-h-[550px] overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-300">
+      {/* Solid Opaque Suggestions Dropdown */}
+      {showSuggestions && hasResults && (
+        <div
+          className="absolute top-full left-0 right-0 mt-2 rounded-2xl shadow-2xl border border-theme bg-theme-card theme-text overflow-hidden max-h-[65vh] sm:max-h-[480px] overflow-y-auto z-30"
+          style={{ backgroundColor: "var(--bg-card)" }}
+        >
+          {/* Exact Verse Jump */}
+          {results.jump && (
+            <div className="border-b border-theme">
+              <div className="px-4 sm:px-6 py-2.5 text-[11px] font-bold uppercase tracking-widest flex justify-between bg-theme-soft theme-gold">
+                <span>Exact Verse Match</span>
+                <span className="hidden sm:inline text-[10px]">Click to Jump</span>
+              </div>
 
-            {results.jump && (
-              <div className="border-b border-gray-100 bg-teal-50/30">
-                <div className="p-3 px-6 text-[11px] font-bold text-[#8c7355] uppercase tracking-widest flex justify-between">
-                  <span>
-                    Exact Match
-                  </span>
-
-                  <span className="text-[10px]">
-                    Click to Jump
-                  </span>
-                </div>
-
-                <div
-                  onClick={() =>
-                    handleNavigate(
-                      `/${results.jump.verse_key.replace(
-                        ":",
-                        "/"
-                      )}`
-                    )
-                  }
-                  className="px-6 py-5 cursor-pointer hover:bg-teal-50 transition-colors"
+              <button
+                type="button"
+                onClick={() => {
+                  const [sId, vNum] = results.jump.verse_key.split(":");
+                  handleNavigate(`/surah/${sId}/${vNum}`);
+                }}
+                className="w-full text-left px-4 sm:px-6 py-4 cursor-pointer transition-colors bg-theme-card"
+              >
+                <p
+                  dir="rtl"
+                  className="text-right font-arabic text-xl sm:text-2xl leading-loose theme-text"
                 >
-                  <p className="text-right font-serif text-2xl text-gray-800 leading-loose">
-                    {
-                      results.jump
-                        .text_uthmani
-                    }
-                  </p>
+                  {results.jump.text_uthmani}
+                </p>
 
-                  <p className="text-sm text-gray-600 mt-2 italic">
-                    {
-                      results.jump
-                        ?.translations?.[0]?.text
-                    }
+                <p className="text-xs sm:text-sm mt-2 italic theme-muted">
+                  {results.jump?.translations?.[0]?.text}
+                  <span className="font-bold not-italic ml-2 theme-gold">
+                    ({results.jump.verse_key})
+                  </span>
+                </p>
+              </button>
+            </div>
+          )}
 
-                    <span className="font-bold ml-2 text-[#8c7355]">
-                      (
-                      {
-                        results.jump
-                          .verse_key
-                      }
-                      )
-                    </span>
-                  </p>
-                </div>
+          {/* Surahs */}
+          {results.surahs.length > 0 && (
+            <div>
+              <div className="px-4 sm:px-6 py-2.5 text-[11px] font-bold uppercase tracking-widest bg-theme-soft theme-muted">
+                Surahs
               </div>
-            )}
 
-            {results.surahs.length >
-              0 && (
-              <div>
-                <div className="p-3 px-6 bg-gray-50/50 text-[11px] font-bold text-gray-400 uppercase tracking-widest">
-                  Surahs
-                </div>
-
-                {results.surahs.map(
-                  (s) => (
-                    <div
-                      key={s.id}
-                      onClick={() =>
-                        handleNavigate(
-                          `/${s.id}`
-                        )
-                      }
-                      className="flex items-center justify-between gap-4 px-6 py-4 hover:bg-teal-50/50 cursor-pointer group transition-colors"
-                    >
-                      <div className="flex items-center gap-4">
-                        <RiBookReadLine
-                          size={18}
-                          className="text-gray-300 group-hover:text-[#8c7355]"
-                        />
-
-                        <div>
-                          <p className="font-bold text-gray-700">
-                            {s.id}.{" "}
-                            {
-                              s.name_simple
-                            }
-                          </p>
-
-                          <p className="text-xs text-gray-400">
-                            {
-                              s
-                                .translated_name
-                                ?.name
-                            }
-                          </p>
-                        </div>
-                      </div>
-
-                      <p className="font-arabic text-2xl text-gray-700">
-                        {
-                          s.name_arabic
-                        }
+              {results.surahs.map((surah) => (
+                <button
+                  type="button"
+                  key={surah.id}
+                  onClick={() => handleNavigate(`/surah/${surah.id}`)}
+                  className="w-full text-left flex items-center justify-between gap-4 px-4 sm:px-6 py-3.5 cursor-pointer transition-colors border-b last:border-b-0 border-theme bg-theme-card"
+                >
+                  <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                    <RiBookReadLine size={18} className="shrink-0 theme-accent" />
+                    <div className="min-w-0">
+                      <p className="font-bold text-sm sm:text-base truncate theme-text">
+                        {surah.id}. {surah.name_simple}
+                      </p>
+                      <p className="text-xs truncate theme-muted">
+                        {surah.translated_name?.name}
                       </p>
                     </div>
-                  )
-                )}
+                  </div>
+
+                  <p
+                    dir="rtl"
+                    className="font-arabic text-xl sm:text-2xl shrink-0 theme-text"
+                  >
+                    {surah.name_arabic}
+                  </p>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Juz */}
+          {results.juz.length > 0 && (
+            <div className="border-t border-theme">
+              <div className="px-4 sm:px-6 py-2.5 text-[11px] font-bold uppercase tracking-widest bg-theme-soft theme-muted">
+                Juz
               </div>
-            )}
 
-            {results.juz.length >
-              0 && (
-              <div className="border-t border-gray-100">
-                <div className="p-3 px-6 bg-gray-50/50 text-[11px] font-bold text-gray-400 uppercase tracking-widest">
-                  Juz
-                </div>
+              {results.juz.map((juzItem) => (
+                <button
+                  type="button"
+                  key={juzItem.id}
+                  onClick={() => handleNavigate(`/juz/${juzItem.id}`)}
+                  className="w-full text-left flex items-center gap-3 sm:gap-4 px-4 sm:px-6 py-3.5 cursor-pointer transition-colors border-b last:border-b-0 border-theme bg-theme-card"
+                >
+                  <RiBookReadLine size={18} className="shrink-0 theme-gold" />
+                  <div>
+                    <p className="font-bold text-sm sm:text-base theme-text">
+                      {juzItem.name}
+                    </p>
+                    <p className="text-xs theme-muted">Quran Section</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
 
-                {results.juz.map(
-                  (j) => (
-                    <div
-                      key={j.id}
-                      onClick={() =>
-                        handleNavigate(
-                          `/juz/${j.id}`
-                        )
-                      }
-                      className="flex items-center gap-4 px-6 py-4 hover:bg-teal-50/50 cursor-pointer"
-                    >
-                      <RiBookReadLine
-                        size={18}
-                        className="text-[#8c7355]"
-                      />
-
-                      <div>
-                        <p className="font-bold text-gray-700">
-                          {j.name}
-                        </p>
-
-                        <p className="text-xs text-gray-400">
-                          Quran
-                          Section
-                        </p>
-                      </div>
-                    </div>
-                  )
-                )}
+          {/* Translation / Ayah Results */}
+          {results.ayahs.length > 0 && (
+            <div className="border-t border-theme">
+              <div className="px-4 sm:px-6 py-2.5 text-[11px] font-bold uppercase tracking-widest bg-theme-soft theme-muted">
+                Translation Results
               </div>
-            )}
 
-            {results.ayahs.length >
-              0 && (
-              <div className="border-t border-gray-100">
-                <div className="p-3 px-6 bg-gray-50/50 text-[11px] font-bold text-gray-400 uppercase tracking-widest">
-                  Translation
-                  Results
-                </div>
+              {results.ayahs.map((ayah, idx) => (
+                <button
+                  type="button"
+                  key={ayah.verse_key ? `${ayah.verse_key}-${idx}` : idx}
+                  onClick={() => {
+                    const [sId, vNum] = ayah.verse_key.split(":");
+                    handleNavigate(`/surah/${sId}/${vNum}`);
+                  }}
+                  className="w-full text-left px-4 sm:px-6 py-3.5 cursor-pointer transition-colors border-b last:border-b-0 border-theme bg-theme-card"
+                >
+                  <div className="flex items-center gap-2 mb-1.5 theme-gold">
+                    <RiFileTextLine size={16} />
+                    <span className="text-xs font-black">{ayah.verse_key}</span>
+                  </div>
 
-                {results.ayahs.map(
-                  (
-                    a,
-                    idx
-                  ) => (
-                    <div
-                      key={idx}
-                      onClick={() =>
-                        handleNavigate(
-                          `/${a.verse_key.replace(
-                            ":",
-                            "/"
-                          )}`
-                        )
-                      }
-                      className="px-6 py-4 hover:bg-teal-50/50 cursor-pointer border-b border-gray-50 last:border-0"
-                    >
-                      <div className="flex items-center gap-2 mb-2 text-[#8c7355]">
-                        <RiFileTextLine
-                          size={16}
-                        />
+                  <p
+                    dir="rtl"
+                    className="text-right font-arabic text-base sm:text-lg line-clamp-1 mb-1.5 theme-text"
+                  >
+                    {ayah.text}
+                  </p>
 
-                        <span className="text-xs font-black">
-                          {
-                            a.verse_key
-                          }
-                        </span>
-                      </div>
-
-                      <p className="text-right font-serif text-lg text-gray-800 line-clamp-1 mb-2">
-                        {a.text}
-                      </p>
-
-                      <p
-                        className="text-xs text-gray-500 line-clamp-1 italic"
-                        dangerouslySetInnerHTML={{
-                          __html:
-                            a
-                              .translations?.[0]
-                              ?.text ||
-                            "",
-                        }}
-                      />
-                    </div>
-                  )
-                )}
-              </div>
-            )}
-          </div>
-        )}
+                  <p
+                    className="text-xs line-clamp-1 italic theme-muted"
+                    dangerouslySetInnerHTML={{
+                      __html: ayah.translations?.[0]?.text || "",
+                    }}
+                  />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

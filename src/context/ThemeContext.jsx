@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 
-const ThemeContext = createContext();
+export const ThemeContext = createContext();
 
 export const themes = [
   { id: "seagreen", name: "Sea Green", dot: "#67B992", previewBg: "#E3F2E9" },

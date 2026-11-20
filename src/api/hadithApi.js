@@ -1,4 +1,5 @@
 const BASE_URL = "https://cdn.jsdelivr.net/gh/fawazahmed0/hadith-api@1";
+const FALLBACK_URL = "https://raw.githubusercontent.com/fawazahmed0/hadith-api/1";
 
 export const HADITH_EDITIONS = {
   bukhari: {
@@ -57,25 +58,43 @@ export const HADITH_EDITIONS = {
   },
 };
 
-// Simple in-memory caches to prevent redundant CDN fetches
 const booksCache = new Map();
 const hadithsCache = new Map();
+const singleHadithCache = new Map();
 
-/**
- * Normalizes scholar grades from the API or applies canonical status for Bukhari & Muslim
- */
+const fetchJsonWithFallback = async (path) => {
+  const cleanPath = path.replace(/^\/+/, "");
+  try {
+    const res = await fetch(`${BASE_URL}/${cleanPath}`, { cache: "default" });
+    if (res.ok) return await res.json();
+  } catch {
+    // Fallback to raw GitHub mirror if jsDelivr has a temporary edge issue
+  }
+
+  const fallbackRes = await fetch(`${FALLBACK_URL}/${cleanPath}`, { cache: "default" });
+  if (!fallbackRes.ok) {
+    throw new Error(`HTTP ${fallbackRes.status} for ${cleanPath}`);
+  }
+  return await fallbackRes.json();
+};
+
 const resolveHadithGrade = (grades = [], editionObj) => {
   if (editionObj.defaultGrade) {
     return {
       gradeLabel: editionObj.defaultGrade,
       isAuthentic: true,
-      grades: grades.length > 0 ? grades : [{ name: "Consensus", grade: editionObj.defaultGrade }],
+      grades:
+        Array.isArray(grades) && grades.length > 0
+          ? grades
+          : [{ name: "Consensus", grade: editionObj.defaultGrade }],
     };
   }
 
   if (Array.isArray(grades) && grades.length > 0) {
     const primary = grades[0];
-    const label = primary.grade ? `${primary.grade}${primary.name ? ` (${primary.name})` : ""}` : "Graded";
+    const label = primary.grade
+      ? `${primary.grade}${primary.name ? ` (${primary.name})` : ""}`
+      : "Graded";
     const lower = label.toLowerCase();
     const isAuthentic = lower.includes("sahih") || lower.includes("hasan");
 
@@ -93,6 +112,18 @@ const resolveHadithGrade = (grades = [], editionObj) => {
   };
 };
 
+const extractHadithItem = (data, targetNumber) => {
+  if (!data) return null;
+  if (Array.isArray(data.hadiths)) {
+    const exact = data.hadiths.find(
+      (item) => String(item.hadithnumber) === String(targetNumber)
+    );
+    return exact || data.hadiths[0] || null;
+  }
+  if (typeof data.text === "string") return data;
+  return null;
+};
+
 /**
  * Fetch sections / books of a specific Hadith collection
  */
@@ -104,9 +135,9 @@ export const fetchCollectionBooks = async (collectionKey = "bukhari") => {
   const editionObj = HADITH_EDITIONS[collectionKey] || HADITH_EDITIONS.bukhari;
 
   try {
-    const res = await fetch(`${BASE_URL}/editions/${editionObj.edition}/sections.json`);
-    if (!res.ok) throw new Error("Network response failed");
-    const data = await res.json();
+    const data = await fetchJsonWithFallback(
+      `editions/${editionObj.edition}/sections.json`
+    );
 
     const rawSections = data.sections || data.metadata?.sections || data;
     const normalized = {};
@@ -119,10 +150,14 @@ export const fetchCollectionBooks = async (collectionKey = "bukhari") => {
       });
     }
 
+    if (Object.keys(normalized).length === 0) {
+      throw new Error("Empty sections returned");
+    }
+
     booksCache.set(collectionKey, normalized);
     return normalized;
   } catch (error) {
-    console.error("fetchCollectionBooks error:", error);
+    console.warn("fetchCollectionBooks fallback used:", error?.message || error);
     return {
       1: "Revelation",
       2: "Belief",
@@ -151,120 +186,108 @@ export const fetchHadithsByBook = async (collectionKey = "bukhari", bookNumber =
 
   const editionObj = HADITH_EDITIONS[collectionKey] || HADITH_EDITIONS.bukhari;
 
-  try {
-    const [engRes, araRes, urdRes] = await Promise.allSettled([
-      fetch(`${BASE_URL}/editions/${editionObj.edition}/sections/${bookNumber}.json`),
-      fetch(`${BASE_URL}/editions/${editionObj.arabicEdition}/sections/${bookNumber}.json`),
-      fetch(`${BASE_URL}/editions/${editionObj.urduEdition}/sections/${bookNumber}.json`),
-    ]);
+  const [engRes, araRes, urdRes] = await Promise.allSettled([
+    fetchJsonWithFallback(`editions/${editionObj.edition}/sections/${bookNumber}.json`),
+    fetchJsonWithFallback(`editions/${editionObj.arabicEdition}/sections/${bookNumber}.json`),
+    fetchJsonWithFallback(`editions/${editionObj.urduEdition}/sections/${bookNumber}.json`),
+  ]);
 
-    let hadithsList = [];
-    if (engRes.status === "fulfilled" && engRes.value.ok) {
-      const engData = await engRes.value.json();
-      hadithsList = (engData.hadiths || []).filter(
-        (h) => h && typeof h.text === "string" && h.text.trim().length > 0
-      );
-    }
-
-    const arabicMap = new Map();
-    if (araRes.status === "fulfilled" && araRes.value.ok) {
-      const araData = await araRes.value.json();
-      (araData.hadiths || []).forEach((h) => {
-        if (h.text) arabicMap.set(h.hadithnumber, h.text.trim());
-      });
-    }
-
-    const urduMap = new Map();
-    if (urdRes.status === "fulfilled" && urdRes.value.ok) {
-      const urdData = await urdRes.value.json();
-      (urdData.hadiths || []).forEach((h) => {
-        if (h.text) urduMap.set(h.hadithnumber, h.text.trim());
-      });
-    }
-
-    const formatted = hadithsList.map((h) => {
-      const grading = resolveHadithGrade(h.grades, editionObj);
-      return {
-        id: `${collectionKey}-${h.hadithnumber}`,
-        hadithNumber: h.hadithnumber,
-        arabic: arabicMap.get(h.hadithnumber) || "",
-        english: h.text.trim(),
-        urdu:
-          urduMap.get(h.hadithnumber) ||
-          "اس حدیث کا اردو ترجمہ جلد شامل کیا جائے گا۔",
-        collection: collectionKey,
-        collectionName: editionObj.name,
-        reference: `${editionObj.name} #${h.hadithnumber}`,
-        gradeLabel: grading.gradeLabel,
-        isAuthentic: grading.isAuthentic,
-        grades: grading.grades,
-      };
-    });
-
-    hadithsCache.set(cacheKey, formatted);
-    return formatted;
-  } catch (error) {
-    console.error("fetchHadithsByBook error:", error);
-    return [];
+  let hadithsList = [];
+  if (engRes.status === "fulfilled") {
+    hadithsList = (engRes.value?.hadiths || []).filter(
+      (h) => h && typeof h.text === "string" && h.text.trim().length > 0
+    );
   }
+
+  const arabicMap = new Map();
+  if (araRes.status === "fulfilled") {
+    (araRes.value?.hadiths || []).forEach((h) => {
+      if (h?.text) arabicMap.set(String(h.hadithnumber), h.text.trim());
+    });
+  }
+
+  const urduMap = new Map();
+  if (urdRes.status === "fulfilled") {
+    (urdRes.value?.hadiths || []).forEach((h) => {
+      if (h?.text) urduMap.set(String(h.hadithnumber), h.text.trim());
+    });
+  }
+
+  const formatted = hadithsList.map((h) => {
+    const keyNum = String(h.hadithnumber);
+    const grading = resolveHadithGrade(h.grades, editionObj);
+    return {
+      id: `${collectionKey}-${keyNum}`,
+      hadithNumber: h.hadithnumber,
+      arabic: arabicMap.get(keyNum) || "",
+      english: h.text.trim(),
+      urdu:
+        urduMap.get(keyNum) ||
+        "اس حدیث کا اردو ترجمہ جلد شامل کیا جائے گا۔",
+      collection: collectionKey,
+      collectionName: editionObj.name,
+      reference: `${editionObj.name} #${h.hadithnumber}`,
+      gradeLabel: grading.gradeLabel,
+      isAuthentic: grading.isAuthentic,
+      grades: grading.grades,
+    };
+  });
+
+  if (formatted.length > 0) {
+    hadithsCache.set(cacheKey, formatted);
+  }
+
+  return formatted;
 };
 
 /**
  * Direct lookup by Hadith Number (Arabic, English, and Urdu)
  */
 export const fetchSingleHadith = async (collectionKey = "bukhari", hadithNumber = 1) => {
+  const numStr = String(hadithNumber).trim();
+  const cacheKey = `single-${collectionKey}-${numStr}`;
+  if (singleHadithCache.has(cacheKey)) {
+    return singleHadithCache.get(cacheKey);
+  }
+
   const editionObj = HADITH_EDITIONS[collectionKey] || HADITH_EDITIONS.bukhari;
 
   const [engRes, araRes, urdRes] = await Promise.allSettled([
-    fetch(`${BASE_URL}/editions/${editionObj.edition}/${hadithNumber}.json`),
-    fetch(`${BASE_URL}/editions/${editionObj.arabicEdition}/${hadithNumber}.json`),
-    fetch(`${BASE_URL}/editions/${editionObj.urduEdition}/${hadithNumber}.json`),
+    fetchJsonWithFallback(`editions/${editionObj.edition}/${numStr}.json`),
+    fetchJsonWithFallback(`editions/${editionObj.arabicEdition}/${numStr}.json`),
+    fetchJsonWithFallback(`editions/${editionObj.urduEdition}/${numStr}.json`),
   ]);
 
-  if (engRes.status !== "fulfilled" || !engRes.value.ok) {
+  if (engRes.status !== "fulfilled") {
     throw new Error("Hadith not found");
   }
 
-  const engData = await engRes.value.json();
-  const araData =
-    araRes.status === "fulfilled" && araRes.value.ok ? await araRes.value.json() : null;
-  const urdData =
-    urdRes.status === "fulfilled" && urdRes.value.ok ? await urdRes.value.json() : null;
-
-  const h =
-    engData.hadiths?.find((item) => Number(item.hadithnumber) === Number(hadithNumber)) ||
-    engData.hadiths?.[0] ||
-    engData;
-
+  const h = extractHadithItem(engRes.value, numStr);
   if (!h?.text || !h.text.trim()) {
     throw new Error("Hadith text unavailable");
   }
 
-  const araText =
-    araData?.hadiths?.find((item) => Number(item.hadithnumber) === Number(hadithNumber))?.text ||
-    araData?.hadiths?.[0]?.text ||
-    araData?.text ||
-    "";
-
-  const urdText =
-    urdData?.hadiths?.find((item) => Number(item.hadithnumber) === Number(hadithNumber))?.text ||
-    urdData?.hadiths?.[0]?.text ||
-    urdData?.text ||
-    "اس حدیث کا اردو ترجمہ جلد شامل کیا جائے گا۔";
+  const araItem = araRes.status === "fulfilled" ? extractHadithItem(araRes.value, numStr) : null;
+  const urdItem = urdRes.status === "fulfilled" ? extractHadithItem(urdRes.value, numStr) : null;
 
   const grading = resolveHadithGrade(h.grades, editionObj);
 
-  return {
-    id: `${collectionKey}-${hadithNumber}`,
-    hadithNumber,
-    arabic: araText.trim(),
+  const result = {
+    id: `${collectionKey}-${numStr}`,
+    hadithNumber: h.hadithnumber ?? numStr,
+    arabic: (araItem?.text || "").trim(),
     english: h.text.trim(),
-    urdu: urdText.trim(),
+    urdu:
+      (urdItem?.text || "").trim() ||
+      "اس حدیث کا اردو ترجمہ جلد شامل کیا جائے گا۔",
     collection: collectionKey,
     collectionName: editionObj.name,
-    reference: `${editionObj.name} #${hadithNumber}`,
+    reference: `${editionObj.name} #${h.hadithnumber ?? numStr}`,
     gradeLabel: grading.gradeLabel,
     isAuthentic: grading.isAuthentic,
     grades: grading.grades,
   };
+
+  singleHadithCache.set(cacheKey, result);
+  return result;
 };

@@ -1,42 +1,84 @@
-import React, { useState } from 'react';
-import { RiArrowRightUpBoxLine, RiListUnordered } from '@remixicon/react';
-import PopularPopOver from './PopularPopOver';
-import NavigationDrawer from './NavigationDrawer';
+import React, { useState, useEffect, useRef, useContext } from "react";
+import { RiArrowRightUpBoxLine, RiListUnordered } from "@remixicon/react";
+import PopularPopOver from "./PopularPopOver";
+import NavigationDrawer from "./NavigationDrawer";
+import { ThemeContext } from "../../context/ThemeContext";
 
-const QuickActions = ({ allChapters }) => {
+const QuickActions = ({ allChapters = [] }) => {
+  const { theme } = useContext(ThemeContext);
   const [isNavOpen, setIsNavOpen] = useState(false);
   const [isPopOpen, setIsPopOpen] = useState(false);
+  const popRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (popRef.current && !popRef.current.contains(event.target)) {
+        setIsPopOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   return (
-    <div className="flex flex-col sm:flex-row justify-start w-full gap-3 mt-8 relative ">
-      <button 
-        onClick={() => setIsNavOpen(true)}
-        className="flex items-center justify-center sm:justify-start gap-3 px-6 py-3 bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-transparent hover:border-[#2ca4ab] hover:shadow-xl transition-all active:scale-95 group"
+    <div
+      data-theme={theme}
+      className="flex flex-wrap items-center justify-start w-full gap-3 relative z-20"
+    >
+      {/* Navigate Quran Button */}
+      <button
+        type="button"
+        onClick={() => {
+          setIsPopOpen(false);
+          setIsNavOpen(true);
+        }}
+        className="flex-1 sm:flex-initial min-h-[44px] flex items-center justify-center sm:justify-start gap-2.5 px-5 sm:px-6 py-3 rounded-2xl shadow-sm hover:shadow-md transition-all active:scale-95 cursor-pointer group border border-theme bg-theme-card theme-text"
+        style={{ backgroundColor: "var(--bg-card)" }}
       >
-        <RiListUnordered className="text-[#bfa07d] group-hover:rotate-12 transition-transform" />
-        <span className="font-bold text-slate-700">Navigate Quran</span>
+        <RiListUnordered
+          size={18}
+          className="transition-transform group-hover:rotate-12 theme-gold"
+        />
+        <span className="font-bold text-sm sm:text-base whitespace-nowrap">
+          Navigate Quran
+        </span>
       </button>
 
-      <div className="relative">
-        <button 
-          onClick={() => setIsPopOpen(!isPopOpen)}
-          className={`flex items-center justify-center sm:justify-start gap-3 px-6 py-3 rounded-2xl shadow-sm border transition-all active:scale-95 group w-full ${isPopOpen ? 'bg-[#bfa07d] text-white' : 'bg-white/90 backdrop-blur-md border-transparent hover:border-[#2ca4ab]'}`}
+      {/* Popular Popover Trigger + Menu */}
+      <div className="relative flex-1 sm:flex-initial" ref={popRef}>
+        <button
+          type="button"
+          onClick={() => setIsPopOpen((prev) => !prev)}
+          aria-expanded={isPopOpen}
+          className={`w-full min-h-[44px] flex items-center justify-center sm:justify-start gap-2.5 px-5 sm:px-6 py-3 rounded-2xl shadow-sm hover:shadow-md transition-all active:scale-95 cursor-pointer group border ${
+            isPopOpen
+              ? "bg-gold border-gold"
+              : "bg-theme-card border-theme theme-text"
+          }`}
+          style={{
+            backgroundColor: isPopOpen ? "var(--gold)" : "var(--bg-card)",
+          }}
         >
-          <RiArrowRightUpBoxLine className={isPopOpen ? 'text-white' : 'text-[#bfa07d]'} />
-          <span className={`font-bold ${isPopOpen ? 'text-white' : 'text-slate-700'}`}>Popular</span>
+          <RiArrowRightUpBoxLine
+            size={18}
+            className={isPopOpen ? "" : "theme-gold"}
+          />
+          <span className="font-bold text-sm sm:text-base whitespace-nowrap">
+            Popular
+          </span>
         </button>
 
         {isPopOpen && (
-          <div className="absolute top-full left-0 mt-3 w-full sm:w-[300px]">
-             <PopularPopOver onClose={() => setIsPopOpen(false)} />
-          </div>
+          <PopularPopOver onClose={() => setIsPopOpen(false)} />
         )}
       </div>
 
-      <NavigationDrawer 
-        isOpen={isNavOpen} 
-        onClose={() => setIsNavOpen(false)} 
-        allChapters={allChapters} 
+      {/* Navigation Drawer (z-[200] covers SearchBar z-20) */}
+      <NavigationDrawer
+        isOpen={isNavOpen}
+        onClose={() => setIsNavOpen(false)}
+        allChapters={allChapters}
       />
     </div>
   );

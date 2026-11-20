@@ -246,24 +246,30 @@ const SurahDetail = () => {
   /* Audio                                                              */
   /* ------------------------------------------------------------------ */
 
-  const handlePlayAudio = async (startVerseKey = null) => {
+  const handlePlayAudio = async (startVerseKey = null, reciterOverride = null) => {
     try {
-      const reciterId = selectedReciter?.id || 7;
+      const reciterId = reciterOverride?.id || selectedReciter?.id || 7;
       const audioData = await fetchVerseAudioList(reciterId, surahId);
+
+      if (!audioData || audioData.length === 0) {
+        console.warn("No audio files returned for this reciter/surah.");
+        return;
+      }
+
       setAudioList(audioData);
-      
+
       if (startVerseKey) {
-        const idx = audioData.findIndex(a => a.verse_key === startVerseKey);
+        const idx = audioData.findIndex((a) => a.verse_key === startVerseKey);
         setCurrentAudioIndex(idx !== -1 ? idx : 0);
-        setPlayMode('single');
+        setPlayMode("single");
       } else {
         setCurrentAudioIndex(0);
-        setPlayMode('continuous');
+        setPlayMode("continuous");
       }
-      
+
       setIsAudioOpen(true);
     } catch (e) {
-      console.error('Audio stream system interface runtime fault:', e);
+      console.error("Audio stream system interface runtime fault:", e);
     }
   };
 
@@ -565,15 +571,18 @@ const SurahDetail = () => {
       )}
 
       {isReciterOpen && (
-        <ReciterSelector 
-          selectedId={selectedReciter.id} 
+        <ReciterSelector
+          selectedId={selectedReciter.id}
           onSelect={(rec) => {
             setSelectedReciter(rec);
+            setIsReciterOpen(false);
             if (isAudioOpen) {
-              handlePlayAudio();
+              const activeKey =
+                playMode === "single" ? audioList[currentAudioIndex]?.verse_key : null;
+              handlePlayAudio(activeKey, rec);
             }
-          }} 
-          onClose={() => setIsReciterOpen(false)} 
+          }}
+          onClose={() => setIsReciterOpen(false)}
         />
       )}
 
