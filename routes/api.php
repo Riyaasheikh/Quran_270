@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\GuideController;
 use App\Http\Controllers\Auth\AuthController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\BookmarkController;
@@ -17,11 +18,11 @@ Route::get('/quran/topics', [QuranLinkerController::class, 'getTopics']); // Add
 Route::get('/quran/search/topics', [QuranLinkerController::class, 'searchTopics']);
 Route::get('/quran/prophets', [QuranLinkerController::class, 'getProphets']);
 Route::get('/quran/figures', [QuranLinkerController::class, 'getFigures']);
-
 Route::get('/mosques/facilities', [MosqueFacilityController::class, 'index']);
 Route::middleware('auth:sanctum')->post('/mosques/facilities', [MosqueFacilityController::class, 'store']);
 Route::get('/quran/linker', [QuranLinkerController::class, 'getLinks']);
 Route::get('/zakat/prices', [ZakatController::class, 'prices'])->middleware('throttle:30,1');
+Route::middleware('throttle:20,1')->post('/guide/chat', [GuideController::class, 'chat']);
 // Protected routes
 
 
