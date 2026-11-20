@@ -38,9 +38,6 @@ const SurahDetail = () => {
   const { theme, themes } = useTheme();
   const saveTimeoutRef = useRef(null);
   const verseSettleTimeoutRef = useRef(null);
-
-  // Remembers which deep link (e.g. "2:153") has already been scrolled to,
-  // so a translation change does not scroll the reader back to it.
   const handledDeepLink = useRef(null);
   const [detailHadith, setDetailHadith] = useState(null);
 
@@ -54,6 +51,7 @@ const SurahDetail = () => {
   const [playMode, setPlayMode] = useState('continuous'); 
   
   const [viewMode, setViewMode] = useState('verse');
+  const [tajweedEnabled, setTajweedEnabled] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [mushafVerses, setMushafVerses] = useState([]);
   const [mushafLoading, setMushafLoading] = useState(false);
@@ -68,17 +66,11 @@ const SurahDetail = () => {
   const [userBookmarks, setUserBookmarks] = useState([]);
   const [tafsirVerse, setTafsirVerse] = useState(null);
   const [hadithVerse, setHadithVerse] = useState(null);
-
-  // Settled verse key so fast scrolling doesn't cause rapid card/link flicker
   const [activeVerseKey, setActiveVerseKey] = useState(null);
   const [linkerOpen, setLinkerOpen] = useState(false);
 
   const activeJuz = mushafVerses[0]?.juz_number || 1;
   const activeThemeObj = themes.find((t) => t.id === theme) || themes[0];
-
-  /* ------------------------------------------------------------------ */
-  /* Data loading                                                       */
-  /* ------------------------------------------------------------------ */
 
   useEffect(() => {
     if (!user) return;
@@ -87,7 +79,6 @@ const SurahDetail = () => {
       .catch(() => {});
   }, [user]);
 
-  // New surah: forget the previous deep link and reading position
   useEffect(() => {
     handledDeepLink.current = null;
     if (verseSettleTimeoutRef.current) clearTimeout(verseSettleTimeoutRef.current);
@@ -104,7 +95,6 @@ const SurahDetail = () => {
   useEffect(() => {
     if (!surahId || isNaN(surahId)) return;
     setLoading(true);
-    
     Promise.all([
       fetchSurahVerses(surahId, translation.id),
       fetchChapterDetail(surahId),
@@ -113,7 +103,6 @@ const SurahDetail = () => {
       setVerses(versesData || []);
       setChapterData(infoData);
       setAllChapters(chaptersData || []);
-      
       if (versesData && versesData.length > 0 && versesData[0].page_number) {
         setCurrentPage(versesData[0].page_number);
       }
@@ -135,10 +124,6 @@ const SurahDetail = () => {
         setMushafLoading(false);
       });
   }, [currentPage, viewMode]);
-
-  /* ------------------------------------------------------------------ */
-  /* Mushaf navigation                                                  */
-  /* ------------------------------------------------------------------ */
 
   const goToNextPage = useCallback(() => {
     setCurrentPage((p) => (p < 604 ? p + 1 : p));
@@ -164,10 +149,6 @@ const SurahDetail = () => {
     setJuzDrawerOpen(false);
   };
 
-  /* ------------------------------------------------------------------ */
-  /* Reading position + linker popup                                    */
-  /* ------------------------------------------------------------------ */
-
   const scrollToVerse = useCallback((verseNum) => {
     const el = document.getElementById(`verse-${verseNum}`);
     if (!el) return false;
@@ -177,11 +158,9 @@ const SurahDetail = () => {
     return true;
   }, []);
 
-  // Used by the Linker popup: scroll within this surah, or open another surah at that verse
   const handleSelectVerse = useCallback((verseKey) => {
     const [targetSurah, targetVerse] = String(verseKey).split(':');
     if (!targetSurah || !targetVerse) return;
-
     if (targetSurah === String(surahId)) {
       scrollToVerse(targetVerse);
     } else {
@@ -189,26 +168,19 @@ const SurahDetail = () => {
     }
   }, [surahId, navigate, scrollToVerse]);
 
-  // Deep link: /surah/:surahId/:verseNumber scrolls to that verse once
   useEffect(() => {
     if (loading || viewMode !== 'verse' || !verseNumber || verses.length === 0) return;
-
     const key = `${surahId}:${verseNumber}`;
     if (handledDeepLink.current === key) return;
-
     const timer = setTimeout(() => {
       if (scrollToVerse(verseNumber)) handledDeepLink.current = key;
     }, 400);
-
     return () => clearTimeout(timer);
   }, [loading, viewMode, verses, verseNumber, surahId, scrollToVerse]);
 
-  // Track the verse near the reading line with a short settle delay to prevent scroll flicker
   useEffect(() => {
     if (loading || viewMode !== 'verse' || verses.length === 0) return;
-
     const inBand = new Set();
-
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -216,42 +188,29 @@ const SurahDetail = () => {
           if (entry.isIntersecting) inBand.add(n);
           else inBand.delete(n);
         });
-
         if (inBand.size === 0) return;
-
         const targetNum = Math.min(...inBand);
         const current = verses.find((v) => v.verse_number === targetNum);
         if (!current) return;
-
-        if (verseSettleTimeoutRef.current) {
-          clearTimeout(verseSettleTimeoutRef.current);
-        }
-
+        if (verseSettleTimeoutRef.current) clearTimeout(verseSettleTimeoutRef.current);
         verseSettleTimeoutRef.current = setTimeout(() => {
           setActiveVerseKey((prev) => (prev === current.verse_key ? prev : current.verse_key));
         }, 180);
       },
       { rootMargin: '-32% 0px -52% 0px', threshold: 0 }
     );
-
     document.querySelectorAll('.verse-card').forEach((card) => observer.observe(card));
-
     return () => {
       observer.disconnect();
       if (verseSettleTimeoutRef.current) clearTimeout(verseSettleTimeoutRef.current);
     };
   }, [loading, viewMode, verses]);
 
-  /* ------------------------------------------------------------------ */
-  /* Audio                                                              */
-  /* ------------------------------------------------------------------ */
-
   const handlePlayAudio = async (startVerseKey = null) => {
     try {
       const reciterId = selectedReciter?.id || 7;
       const audioData = await fetchVerseAudioList(reciterId, surahId);
       setAudioList(audioData);
-      
       if (startVerseKey) {
         const idx = audioData.findIndex(a => a.verse_key === startVerseKey);
         setCurrentAudioIndex(idx !== -1 ? idx : 0);
@@ -260,16 +219,11 @@ const SurahDetail = () => {
         setCurrentAudioIndex(0);
         setPlayMode('continuous');
       }
-      
       setIsAudioOpen(true);
     } catch (e) {
       console.error('Audio stream system interface runtime fault:', e);
     }
   };
-
-  /* ------------------------------------------------------------------ */
-  /* Render (all hooks are above this line)                             */
-  /* ------------------------------------------------------------------ */
 
   if (loading || !chapterData) {
     return (
@@ -323,6 +277,16 @@ const SurahDetail = () => {
                 >
                   Mushaf
                 </button>
+                <button
+                  onClick={() => setTajweedEnabled(!tajweedEnabled)}
+                  className={`px-3.5 py-1.5 rounded-lg text-xs font-bold tracking-wider uppercase transition-all duration-200 cursor-pointer ${
+                    tajweedEnabled
+                      ? 'bg-green-600 text-white shadow-xs'
+                      : 'theme-muted hover:theme-text'
+                  }`}
+                >
+                  Tajweed {tajweedEnabled ? 'ON' : 'OFF'}
+                </button>
               </div>
 
               <button 
@@ -337,31 +301,21 @@ const SurahDetail = () => {
         </header>
 
         {viewMode === 'verse' ? (
-          <main
-            className={`transition-opacity duration-200 ${
-              linkerOpen ? 'xl:pe-[25rem]' : ''
-            }`}
-          >
+          <main className={`transition-opacity duration-200 ${linkerOpen ? 'xl:pe-[25rem]' : ''}`}>
             <SurahControls 
               onPlay={() => handlePlayAudio()} 
               translation={translation} 
               onOpenTranslation={() => setIsTransOpen(true)} 
             />
-
             <SurahIntro chapter={chapterData} />
-
             <div className="reading-column px-4 md:px-6 pb-24 space-y-4">
               {verses.map(v => (
-                <div 
-                  key={v.id || v.verse_key} 
-                  id={`verse-${v.verse_number}`} 
-                  data-verse-number={v.verse_number} 
-                  className="verse-card ayah group"
-                >
+                <div key={v.id || v.verse_key} id={`verse-${v.verse_number}`} data-verse-number={v.verse_number} className="verse-card ayah group">
                   <VerseCard 
                     verse={v} 
                     translationId={translation.id}
                     isBookmarked={userBookmarks.includes(v.verse_key)}
+                    tajweedEnabled={tajweedEnabled}
                     onPlay={() => handlePlayAudio(v.verse_key)} 
                     onTafsir={setTafsirVerse}
                     onHadith={setHadithVerse}
@@ -379,44 +333,19 @@ const SurahDetail = () => {
           <div className="theme-page py-6 px-4 sm:px-6 flex flex-col items-center">
             <div className="theme-glass w-full max-w-5xl flex flex-wrap items-center justify-between gap-3 mb-5 px-4 sm:px-6 py-3 rounded-full sticky top-24 z-20">
               <div className="flex items-center gap-2 sm:gap-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setJuzDrawerOpen((o) => !o);
-                    setThemeMenuOpen(false);
-                  }}
-                  className="theme-button !min-h-[2.25rem] !px-4 !rounded-full text-xs cursor-pointer"
-                >
-                  <span>Juz {activeJuz} of 30</span>
-                  <span>▾</span>
+                <button type="button" onClick={() => { setJuzDrawerOpen((o) => !o); setThemeMenuOpen(false); }} className="theme-button !min-h-[2.25rem] !px-4 !rounded-full text-xs cursor-pointer">
+                  <span>Juz {activeJuz} of 30</span><span>▾</span>
                 </button>
-                <span className="theme-badge hidden md:inline-flex">
-                  Page {currentPage} / 604
-                </span>
+                <span className="theme-badge hidden md:inline-flex">Page {currentPage} / 604</span>
               </div>
-
               <div className="flex items-center gap-2">
                 <div className="hidden sm:flex items-center bg-theme-soft border border-theme rounded-full p-0.5">
-                  {[
-                    { id: "sm", label: "A-" },
-                    { id: "normal", label: "A" },
-                    { id: "lg", label: "A+" },
-                  ].map((sz) => (
-                    <button
-                      key={sz.id}
-                      type="button"
-                      onClick={() => setFontScale(sz.id)}
-                      className={`px-2.5 py-1 rounded-full text-xs font-bold cursor-pointer transition ${
-                        fontScale === sz.id ? "bg-accent text-white" : "theme-muted hover:theme-text"
-                      }`}
-                    >
-                      {sz.label}
-                    </button>
+                  {[{ id: "sm", label: "A-" },{ id: "normal", label: "A" },{ id: "lg", label: "A+" }].map((sz) => (
+                    <button key={sz.id} type="button" onClick={() => setFontScale(sz.id)} className={`px-2.5 py-1 rounded-full text-xs font-bold cursor-pointer transition ${fontScale === sz.id ? "bg-accent text-white" : "theme-muted hover:theme-text"}`}>{sz.label}</button>
                   ))}
                 </div>
               </div>
             </div>
-
             {juzDrawerOpen && (
               <div className="theme-card theme-card-static w-full max-w-5xl mb-6 p-5 z-20">
                 <div className="flex items-center justify-between mb-3.5">
@@ -424,34 +353,18 @@ const SurahDetail = () => {
                     <span className="theme-badge-gold theme-badge">Juz 1 – 30</span>
                     <span className="text-xs theme-muted">Select any Juz to jump directly</span>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setJuzDrawerOpen(false)}
-                    className="theme-button-ghost !min-h-[2rem] !px-2.5 text-xs cursor-pointer"
-                  >
-                    Close ✕
-                  </button>
+                  <button type="button" onClick={() => setJuzDrawerOpen(false)} className="theme-button-ghost !min-h-[2rem] !px-2.5 text-xs cursor-pointer">Close ✕</button>
                 </div>
                 <div className="grid grid-cols-5 sm:grid-cols-10 gap-2">
                   {juzList.map((juz) => {
                     const isCurrent = activeJuz === juz.id;
                     return (
-                      <button
-                        key={juz.id}
-                        type="button"
-                        onClick={() => handleSelectJuz(juz.id)}
-                        className={`py-2.5 rounded-xl text-xs font-bold transition cursor-pointer border ${
-                          isCurrent ? "bg-accent border-accent shadow-sm" : "bg-theme-soft border-theme theme-text hover:border-accent"
-                        }`}
-                      >
-                        {juz.id}
-                      </button>
+                      <button key={juz.id} type="button" onClick={() => handleSelectJuz(juz.id)} className={`py-2.5 rounded-xl text-xs font-bold transition cursor-pointer border ${isCurrent ? "bg-accent border-accent shadow-sm" : "bg-theme-soft border-theme theme-text hover:border-accent"}`}>{juz.id}</button>
                     );
                   })}
                 </div>
               </div>
             )}
-
             <main className="reading-surface relative overflow-hidden w-full max-w-5xl">
               <div className="p-6 sm:p-10 lg:p-12 min-h-[72vh] flex flex-col justify-between">
                 {mushafLoading ? (
@@ -467,35 +380,20 @@ const SurahDetail = () => {
                         <span className="font-arabic text-base">القرآن الكريم</span>
                         <span>Page {currentPage}</span>
                       </div>
-
-                      <div
-                        dir="rtl"
-                        lang="ar"
-                        style={{ textAlignLast: "center" }}
-                        className={`font-quran ${quranSizeClass} !text-justify`}
-                      >
+                      <div dir="rtl" lang="ar" style={{ textAlignLast: "center" }} className={`font-quran ${quranSizeClass} !text-justify`}>
                         {mushafVerses.map((v) => {
                           const [surahNum, ayahNum] = v.verse_key.split(":");
                           return (
                             <React.Fragment key={v.id}>
                               {ayahNum === "1" && (
                                 <div className="my-6 py-3 px-4 rounded-xl bg-gold-soft border border-gold/40 text-center">
-                                  <span className="text-xs font-bold uppercase tracking-widest theme-gold block">
-                                    Surah {surahNum}
-                                  </span>
+                                  <span className="text-xs font-bold uppercase tracking-widest theme-gold block">Surah {surahNum}</span>
                                   {surahNum !== "1" && surahNum !== "9" && (
-                                    <div className="font-quran text-2xl sm:text-3xl !text-center mt-1">
-                                      بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
-                                    </div>
+                                    <div className="font-quran text-2xl sm:text-3xl !text-center mt-1">بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ</div>
                                   )}
                                 </div>
                               )}
-                              <span>
-                                {v.text_uthmani}{" "}
-                                <span className="ayah-number mx-1 align-middle !text-gold border-gold/40">
-                                  {ayahNum}
-                                </span>{" "}
-                              </span>
+                              <span>{v.text_uthmani}{" "}<span className="ayah-number mx-1 align-middle !text-gold border-gold/40">{ayahNum}</span>{" "}</span>
                             </React.Fragment>
                           );
                         })}
@@ -503,36 +401,13 @@ const SurahDetail = () => {
                     </div>
                   </div>
                 )}
-
                 <div className="mt-10 pt-5 border-t border-theme flex items-center justify-between gap-3">
-                  <button
-                    type="button"
-                    onClick={goToNextPage}
-                    disabled={currentPage >= 604}
-                    className="theme-button !rounded-full text-xs sm:text-sm cursor-pointer"
-                  >
-                    <span>←</span>
-                    <span>Next Page</span>
-                  </button>
-
+                  <button type="button" onClick={goToNextPage} disabled={currentPage >= 604} className="theme-button !rounded-full text-xs sm:text-sm cursor-pointer"><span>←</span><span>Next Page</span></button>
                   <div className="flex flex-col items-center text-center">
-                    <span className="text-xs font-bold tracking-widest uppercase theme-gold">
-                      Juz {activeJuz} • Page {currentPage}
-                    </span>
-                    <span className="text-[11px] theme-subtle hidden sm:inline">
-                      Use ← / → arrow keys to turn pages
-                    </span>
+                    <span className="text-xs font-bold tracking-widest uppercase theme-gold">Juz {activeJuz} • Page {currentPage}</span>
+                    <span className="text-[11px] theme-subtle hidden sm:inline">Use ← / → arrow keys to turn pages</span>
                   </div>
-
-                  <button
-                    type="button"
-                    onClick={goToPrevPage}
-                    disabled={currentPage <= 1}
-                    className="theme-button-outline !rounded-full text-xs sm:text-sm cursor-pointer"
-                  >
-                    <span>Previous Page</span>
-                    <span>→</span>
-                  </button>
+                  <button type="button" onClick={goToPrevPage} disabled={currentPage <= 1} className="theme-button-outline !rounded-full text-xs sm:text-sm cursor-pointer"><span>Previous Page</span><span>→</span></button>
                 </div>
               </div>
             </main>
@@ -540,66 +415,19 @@ const SurahDetail = () => {
         )}
       </div>
 
-      {/* Linker popup: smoothly follows the settled verse near the reading line */}
       {viewMode === 'verse' && activeVerseKey && (
-        <QuranLinkerPopup
-          verseKey={activeVerseKey}
-          onSelectVerse={handleSelectVerse}
-          raised={isAudioOpen}
-          onOpenChange={setLinkerOpen}
-        />
+        <QuranLinkerPopup verseKey={activeVerseKey} onSelectVerse={handleSelectVerse} raised={isAudioOpen} onOpenChange={setLinkerOpen} />
       )}
-
       {isAudioOpen && (
-        <AudioPlayer 
-          playlist={audioList}
-          currentIndex={currentAudioIndex}
-          surahName={chapterData.name_simple}
-          reciterName={selectedReciter.reciter_name || selectedReciter.name}
-          isSingleVerseMode={playMode === 'single'}
-          onClose={() => setIsAudioOpen(false)}
-          onChangeReciter={() => setIsReciterOpen(true)}
-          onNext={() => setCurrentAudioIndex(p => (p + 1) % audioList.length)}
-          onPrevious={() => setCurrentAudioIndex(p => (p - 1 + audioList.length) % audioList.length)}
-        />
+        <AudioPlayer playlist={audioList} currentIndex={currentAudioIndex} surahName={chapterData.name_simple} reciterName={selectedReciter.reciter_name || selectedReciter.name} isSingleVerseMode={playMode === 'single'} onClose={() => setIsAudioOpen(false)} onChangeReciter={() => setIsReciterOpen(true)} onNext={() => setCurrentAudioIndex(p => (p + 1) % audioList.length)} onPrevious={() => setCurrentAudioIndex(p => (p - 1 + audioList.length) % audioList.length)} />
       )}
-
       {isReciterOpen && (
-        <ReciterSelector 
-          selectedId={selectedReciter.id} 
-          onSelect={(rec) => {
-            setSelectedReciter(rec);
-            if (isAudioOpen) {
-              handlePlayAudio();
-            }
-          }} 
-          onClose={() => setIsReciterOpen(false)} 
-        />
+        <ReciterSelector selectedId={selectedReciter.id} onSelect={(rec) => { setSelectedReciter(rec); if (isAudioOpen) { handlePlayAudio(); } }} onClose={() => setIsReciterOpen(false)} />
       )}
-
-      <TranslationManager 
-        isOpen={isTransOpen} 
-        onClose={() => setIsTransOpen(false)} 
-        selectedId={translation.id}
-        onSelect={(t) => setTranslation({ id: t.id.toString(), name: t.author_name })}
-      />
-
+      <TranslationManager isOpen={isTransOpen} onClose={() => setIsTransOpen(false)} selectedId={translation.id} onSelect={(t) => setTranslation({ id: t.id.toString(), name: t.author_name })} />
       {tafsirVerse && <TafsirDrawer verse={tafsirVerse} onClose={() => setTafsirVerse(null)} />}
-      {hadithVerse && (
-        <HadithDrawer
-          verse={hadithVerse}
-          onClose={() => setHadithVerse(null)}
-          onOpenHadithDetail={(h) => setDetailHadith(h)}
-        />
-      )}
-
-      {detailHadith && (
-        <HadithDetailDrawer
-          hadith={detailHadith}
-          onClose={() => setDetailHadith(null)}
-        />
-      )}
-
+      {hadithVerse && (<HadithDrawer verse={hadithVerse} onClose={() => setHadithVerse(null)} onOpenHadithDetail={(h) => setDetailHadith(h)} />)}
+      {detailHadith && (<HadithDetailDrawer hadith={detailHadith} onClose={() => setDetailHadith(null)} />)}
       <Footer />
     </div>
   );
